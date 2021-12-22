@@ -1,0 +1,20 @@
+#https://raw.githubusercontent.com/gentoo-haskell/gentoo-haskell/master/.github/workflows/pkgcheck.yml
+name: pkgcheck
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Run pkgcheck
+      uses:  pkgcore/pkgcheck-action@v1
+      with:
+        args: --checks=-RedundantVersionCheck --keywords=-PotentialStable
