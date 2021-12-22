@@ -9,6 +9,7 @@ Please consider using [oubliette-overlay](https://github.com/nabbi/oubliette-ove
 
 To add the overlay:
 ```
+sed -i "s/^#overlay_defs/overlay_defs/" /etc/layman/layman.cfg
 wget https://raw.githubusercontent.com/nabbi/oubliette-overlay-dev/main/oubliette-dev.xml -O /etc/layman/overlays/oubliette-dev.xml
 layman -a oubliette-dev
 ```
