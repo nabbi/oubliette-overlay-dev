@@ -6,4 +6,9 @@ This is my sandbox portage overlay for Gentoo Linux
 
 Please consider using [oubliette-overlay](https://github.com/nabbi/oubliette-overlay) instead
 
-* To add the overlay, do '***eselect repository add oubliette-dev https://github.com/nabbi/oubliette-overlay-dev***'
+
+To add the overlay:
+```
+wget https://raw.githubusercontent.com/nabbi/oubliette-overlay-dev/main/oubliette-dev.xml -O /etc/layman/overlays/oubliette-dev.xml
+layman -a oubliette-dev
+```
