@@ -148,12 +148,9 @@ src_install() {
 	keepdir ${MY_ZM_WEBDIR}/temp
 	fowners -R apache:apache ${MY_ZM_WEBDIR}/temp
 
-	# the configuration files
+	# the configuration file
 	fperms 0640 /etc/zm/zm.conf
 	fowners root:apache /etc/zm/zm.conf
-	touch /etc/zm/conf.d/99-local.conf
-	fperms 0640 /etc/zm/conf.d/99-local.conf
-	fowners /etc/zm/conf.d/99-local.conf
 
 	# init scripts etc
 	newinitd "${FILESDIR}"/init.d zoneminder
@@ -209,6 +206,12 @@ pkg_postinst() {
 		ewarn "    Please merge your local changes into /etc/zm/conf.d/99-local.conf"
 		ewarn "    This includes any user created *.conf files for ZM within /etc/conf.d/"
 		ewarn "    Then remove those old files to complete the migration."
+		ewarn ""
+		elog ""
+		elog "Remember to set appropriate permisions on user created files (i.e. /etc/zm/conf.d/*.conf):"
+		elog "    chmod 640 local.conf"
+		elog "    chown root:apache local.conf"
+		elog ""
 		ewarn ""
 		ewarn "ZoneMinder will **NO LONGER FUNCTION UNTIL** these configuration items have been migrated!"
 		ewarn "In particular, ensuring the database hostname and credentials are defined within the new locations."
