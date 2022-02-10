@@ -186,21 +186,26 @@ pkg_postinst() {
 		done
 	fi
 
-	# check for legacy configuration files placed outside of /etc/zm/
+	# check for legacy configuration files placed outside of /etc/zm/ by previous ebuilds
 	local legacy="/etc/zm.conf /etc/conf.d/01-system-paths.conf /etc/conf.d/02-multiserver.conf /etc/conf.d/zmcustom.conf"
 	local lf
 	local lfwarn=0
 	for lf in ${legacy}; do
 		if [[ -f "${lf}" ]]; then
+			ewarn ""
 			ewarn "found deprecated file ${lf}"
 			lfwarn=1
 		fi
 	done
 	if [ -n ${lfwarn} ]; then
+		ewarn ""
 		ewarn "Gentoo's ebuild previously installed ZoneMinder's configurations directly into /etc"
-		ewarn "This conflicts with OpenRC /etc/conf.d as ZM also has a similar conf.d subdirectory "
-		ewarn "Your newly compiled ZoneMinder now expects configurations placed under /etc/zm"
-		ewarn "Please manually merge any local changes you made into /etc/zm/conf.d/99-local.conf"
+		ewarn "This conflicts with OpenRC /etc/conf.d as ZM also has its own conf.d subdirectory"
+		ewarn "Your newly compiled ZoneMinder now looks for configurations  under /etc/zm"
+		ewarn ""
+		ewarn "Please merge any of your local changes into /etc/zm/conf.d/99-local.conf"
+		ewarn ""
 		ewarn "Then delete those old files to complete the migration"
+		ewarn ""
 	fi
 	}
