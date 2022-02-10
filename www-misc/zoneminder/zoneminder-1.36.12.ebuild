@@ -192,7 +192,6 @@ pkg_postinst() {
 	local lfwarn=0
 	for lf in ${legacy}; do
 		if [[ -f "${lf}" ]]; then
-			ewarn ""
 			ewarn "found deprecated file ${lf}"
 			lfwarn=1
 		fi
@@ -204,7 +203,6 @@ pkg_postinst() {
 		ewarn "Your newly compiled ZoneMinder now looks for configurations  under /etc/zm"
 		ewarn ""
 		ewarn "Please merge any of your local changes into /etc/zm/conf.d/99-local.conf"
-		ewarn ""
 		ewarn "Then delete those old files to complete the migration"
 		ewarn ""
 	fi
