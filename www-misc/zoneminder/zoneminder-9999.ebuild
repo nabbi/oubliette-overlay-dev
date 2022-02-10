@@ -196,7 +196,7 @@ pkg_postinst() {
 			lfwarn=1
 		fi
 	done
-	if [ -n ${lfwarn} ]; then
+	if [ ${lfwarn} -ne 0 ]; then
 		ewarn ""
 		ewarn "Gentoo's ebuild previously installed ZoneMinder's configurations directly into /etc"
 		ewarn "This conflicts with OpenRC /etc/conf.d as ZM also has its own conf.d subdirectory"
