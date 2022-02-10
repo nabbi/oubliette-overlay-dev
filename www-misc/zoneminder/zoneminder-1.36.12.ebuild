@@ -180,30 +180,35 @@ pkg_postinst() {
 	else
 		local v
 		for v in ${REPLACING_VERSIONS}; do
-			if ver_test ${PV} -ge ${v}; then
+			if ver_test ${PV} -gt ${v}; then
 				elog "You have upgraded zoneminder and may have to upgrade your database now using the 'zmupdate.pl' script."
 			fi
 		done
 	fi
 
-	# check for legacy configuration files placed outside of /etc/zm/ by previous ebuilds
+	# 2022-02-10 The original ebuild omitted ZM_CONFIG_* at build time
+	# Check if user needs to migrate configs from /etc to /etc/zm
 	local legacy="/etc/zm.conf /etc/conf.d/01-system-paths.conf /etc/conf.d/02-multiserver.conf /etc/conf.d/zmcustom.conf"
 	local lf
 	local lfwarn=0
 	for lf in ${legacy}; do
 		if [[ -f "${lf}" ]]; then
-			ewarn "found deprecated file ${lf}"
+			ewarn "Found deprecated ZoneMinder config ${lf}"
 			lfwarn=1
 		fi
 	done
 	if [ ${lfwarn} -ne 0 ]; then
 		ewarn ""
 		ewarn "Gentoo's ebuild previously installed ZoneMinder's configurations directly into /etc"
-		ewarn "This conflicts with OpenRC /etc/conf.d as ZM also has its own conf.d subdirectory"
-		ewarn "Your newly compiled ZoneMinder now looks for configurations  under /etc/zm"
+		ewarn "This conflicts with OpenRC /etc/conf.d as ZoneMinder also has its own conf.d subdirectory"
+		ewarn "Your newly compiled ZoneMinder now looks for configurations under /etc/zm"
 		ewarn ""
-		ewarn "Please merge any of your local changes into /etc/zm/conf.d/99-local.conf"
-		ewarn "Then delete those old files to complete the migration"
+		ewarn "    Please merge your local changes into /etc/zm/conf.d/99-local.conf"
+		ewarn "    This includes any user created *.conf files for ZM within /etc/conf.d/"
+		ewarn "    Then remove those old files to complete the migration."
+		ewarn ""
+		ewarn "ZoneMinder will **NO LONGER FUNCTION UNTIL** these configuration items have been migrated!"
+		ewarn "In particular, ensuring the database hostname and credentials are defined within the new locations."
 		ewarn ""
 	fi
 	}
