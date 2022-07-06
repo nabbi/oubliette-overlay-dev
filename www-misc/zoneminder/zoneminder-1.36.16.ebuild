@@ -1,7 +1,7 @@
 # Copyright 2022 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=8
+EAPI=7
 
 inherit perl-functions readme.gentoo-r1 cmake flag-o-matic systemd
 
@@ -35,7 +35,7 @@ REQUIRED_USE="
 DEPEND="
 app-eselect/eselect-php[apache2]
 dev-lang/perl:=
-dev-lang/php:*[apache2,cgi,curl,gd,inifile,pdo,mysql,mysqli,sockets,sysvipc]
+dev-lang/php:*[apache2,cgi,curl,gd,inifile,pdo,mysql,mysqli,sockets]
 dev-libs/libpcre
 dev-perl/Archive-Zip
 dev-perl/Class-Std-Fast
