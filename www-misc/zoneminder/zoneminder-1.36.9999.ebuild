@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit perl-functions readme.gentoo-r1 cmake flag-o-matic systemd
+inherit webapp perl-functions readme.gentoo-r1 cmake flag-o-matic systemd
 
 MY_PN="ZoneMinder"
 MY_CRUD_V="3.0"
@@ -81,6 +81,8 @@ vlc? ( media-video/vlc[live] )
 "
 RDEPEND="${DEPEND}"
 
+need_httpd_cgi
+
 MY_ZM_WEBDIR=/usr/share/zoneminder/www
 
 src_prepare() {
@@ -128,12 +130,13 @@ src_configure() {
 
 src_install() {
 	cmake_src_install
+	webapp_src_preinst
 
 	docompress -x /usr/share/man
 
 	# the log directory
 	keepdir /var/log/zm
-	fowners apache:apache /var/log/zm
+	webapp_serverowned -R /var/log/zm
 
 	# the logrotate script
 	insinto /etc/logrotate.d
@@ -141,17 +144,15 @@ src_install() {
 
 	# now we duplicate the work of zmlinkcontent.sh
 	keepdir /var/lib/zoneminder /var/lib/zoneminder/images /var/lib/zoneminder/events /var/lib/zoneminder/api_tmp
-	fperms -R 0775 /var/lib/zoneminder
-	fowners -R apache:apache /var/lib/zoneminder
+	webapp_serverowned -R /var/lib/zoneminder
 	dosym ../../../../../../var/lib/zoneminder/api_tmp ${MY_ZM_WEBDIR}/api/app/tmp
 
 	# bug 523058
 	keepdir ${MY_ZM_WEBDIR}/temp
-	fowners -R apache:apache ${MY_ZM_WEBDIR}/temp
+	webapp_serverowned -R ${MY_ZM_WEBDIR}/temp
 
-	# the configuration file
-	fperms 0640 /etc/zm/zm.conf
-	fowners root:apache /etc/zm/zm.conf
+	# zoneminder default configuration file
+	webapp_serverowned /etc/zm/zm.conf
 
 	# init scripts etc
 	newinitd "${FILESDIR}"/init.d zoneminder
@@ -163,8 +164,14 @@ src_install() {
 	# apache2 conf file
 	cp "${FILESDIR}"/10_zoneminder.conf "${T}"/10_zoneminder.conf || die
 	sed -i "${T}"/10_zoneminder.conf -e "s:%ZM_WEBDIR%:${MY_ZM_WEBDIR}:g" || die
-	insinto /etc/apache2/vhosts.d
-	doins "${T}"/10_zoneminder.conf
+	webapp_server_configfile apache "${T}"/10_zoneminder.conf 10_zoneminder.conf
+
+	webapp_src_install
+
+	# post-webapp_src_install adjustments
+	fperms 0640 /etc/zm/zm.conf
+	fowners root /etc/zm/zm.conf
+	fperms -R 0775 /var/lib/zoneminder
 
 	dodoc CHANGELOG.md CONTRIBUTING.md README.md "${T}"/10_zoneminder.conf
 
