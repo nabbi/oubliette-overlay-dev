@@ -12,15 +12,15 @@ New Installation:
     2. Zoneminder developers recommend that you don't edit the supplied default configuration files
         instead make modifications to files in /etc/zm/conf.d/*.conf to override defaults
        Set your database settings in /etc/zm/conf.d/<ZM_HOST>.conf, including above zmuser & zmpass
-	grep -v DB_TYPE /etc/zm/zm.conf|grep -B3 -A1 ZM_DB > /etc/zm/conf.d/<ZM_HOST>.conf
+        grep -v DB_TYPE /etc/zm/zm.conf|grep -B3 -A1 ZM_DB > /etc/zm/conf.d/<ZM_HOST>.conf
        Where "<ZM_HOST>" is a filename meaningful to you eg. name the file: 70_cctv_host.conf
 
     3. Configure apache|nginx to use zoneminder,
        if using apache edit /etc/apache2/vhosts.d/zoneminder.include as needed
         and create a /etc/apache2/vhosts.d/<NUM>_<VHOST>.conf with include lines to the above
-	 (where NUM is a number and VHOST is a name to identify the vhost eg 50_my_cctv.conf)
+         (where NUM is a number and VHOST is a name to identify the vhost eg 50_my_cctv.conf)
          see /usr/share/doc/zoneminder*/zoneminder_vhost.include* and
-	 /usr/share/doc/zoneminder*/zoneminder_vhost.conf* for examples
+         /usr/share/doc/zoneminder*/zoneminder_vhost.conf* for examples
        if using nginx see /usr/share/doc/zoneminder*/nginx.conf*
         for an example configuration snippet.
 
