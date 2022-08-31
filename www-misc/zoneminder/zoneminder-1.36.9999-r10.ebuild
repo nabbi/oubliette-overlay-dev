@@ -30,16 +30,23 @@ else
 fi
 
 LICENSE="GPL-2"
-IUSE="curl gcrypt gnutls +mmap +ssl vlc"
+IUSE_WEB_SERVER="apache2 nginx"
+IUSE="curl gcrypt gnutls +mmap +ssl vlc ${IUSE_WEB_SERVER}"
 SLOT="0"
 REQUIRED_USE="
 	|| ( ssl gnutls )
+	^^ ( ${IUSE_WEB_SERVER} )
+"
+
+DEPEND_WEB_SERVER="
+apache2? ( www-servers/apache )
+nginx? ( www-servers/nginx )
 "
 
 DEPEND="
-app-eselect/eselect-php[apache2]
+app-eselect/eselect-php
 dev-lang/perl:=
-dev-lang/php:*[apache2,cgi,curl,gd,inifile,intl,pdo,mysql,mysqli,sockets,sysvipc]
+dev-lang/php:*[curl,gd,inifile,intl,pdo,mysql,mysqli,sockets,sysvipc]
 dev-libs/libpcre
 dev-perl/Archive-Zip
 dev-perl/Class-Std-Fast
@@ -73,14 +80,16 @@ virtual/perl-ExtUtils-MakeMaker
 virtual/perl-Getopt-Long
 virtual/perl-Sys-Syslog
 virtual/perl-Time-HiRes
-www-servers/apache
 curl? ( net-misc/curl )
 gcrypt? ( dev-libs/libgcrypt:0= )
 gnutls? ( net-libs/gnutls )
 mmap? ( dev-perl/Sys-Mmap )
 ssl? ( dev-libs/openssl:0= )
 vlc? ( media-video/vlc[live] )
+${DEPEND_WEB_SERVER}
 "
+# webserver is a build time depend; we need the user/group to already exist
+
 RDEPEND="${DEPEND}"
 
 MY_ZM_WEBDIR=/usr/share/zoneminder/www
@@ -88,6 +97,28 @@ MY_ZM_WEBDIR=/usr/share/zoneminder/www
 PATCHES=(
 	"${FILESDIR}/${PN}-1.34.17_dont_gz_man.patch"
 )
+
+pkg_setup() {
+	if use nginx ; then
+		MY_WEB_USER=nginx
+		MY_WEB_GROUP=nginx
+		MY_WEB_INITD=nginx
+	elif use apache2 ; then
+		MY_WEB_USER=apache
+		MY_WEB_GROUP=apache
+		MY_WEB_INITD=apache2
+	fi
+	# allow the user to override
+	[[ -n "${ZM_WEBSRV_USER}" ]] && MY_WEB_USER=${ZM_WEBSRV_USER}
+	[[ -n "${ZM_WEBSRV_GROUP}" ]] && MY_WEB_GROUP=${ZM_WEBSRV_GROUP}
+	[[ -n "${ZM_WEBSRV_INITD}" ]] && MY_WEB_INITD=${ZM_WEBSRV_INITD}
+	# bail if web user:group not set
+	if [[ -z "${MY_WEB_USER}" || -z "${MY_WEB_GROUP}" ]]; then
+		die "no web server configured"
+	fi
+
+	export MY_WEB_USER MY_WEB_GROUP MY_WEB_INITD
+}
 
 src_prepare() {
 	cmake_src_prepare
@@ -129,8 +160,8 @@ src_configure() {
 		-DZM_CONTENTDIR=/var/lib/zoneminder
 		-DZM_CONFIG_DIR="/etc/zm"
 		-DZM_CONFIG_SUBDIR="/etc/zm/conf.d"
-		-DZM_WEB_USER=apache
-		-DZM_WEB_GROUP=apache
+		-DZM_WEB_USER=${MY_WEB_USER}
+		-DZM_WEB_GROUP=${MY_WEB_GROUP}
 		-DZM_WEBDIR=${MY_ZM_WEBDIR}
 		-DZM_NO_MMAP="$(usex mmap OFF ON)"
 		-DZM_NO_X10=OFF
@@ -148,45 +179,62 @@ src_configure() {
 src_install() {
 	cmake_src_install
 
-	# the log directory
+	# the log directory, can contain passwords - limit access
 	keepdir /var/log/zm
-	fowners apache:apache /var/log/zm
+	fperms 0750 /var/log/zm
+	fowners ${MY_WEB_USER}:${MY_WEB_GROUP} /var/log/zm
 
 	# the logrotate script
 	insinto /etc/logrotate.d
 	newins distros/ubuntu2004/zoneminder.logrotate zoneminder
 
 	# now we duplicate the work of zmlinkcontent.sh
-	keepdir /var/lib/zoneminder /var/lib/zoneminder/images /var/lib/zoneminder/events /var/lib/zoneminder/api_tmp
-	fperms -R 0775 /var/lib/zoneminder
-	fowners -R apache:apache /var/lib/zoneminder
-	dosym ../../../../../../var/lib/zoneminder/api_tmp ${MY_ZM_WEBDIR}/api/app/tmp
+	keepdir /var/lib/zoneminder /var/lib/zoneminder/images /var/lib/zoneminder/events
+## AFAIK (limited tests indicate) no longer used:
+	#keepdir /var/lib/zoneminder/api_tmp
+	# set perms/owners per dir, to keep .keep files root owned
+	fperms 0775 /var/lib/zoneminder /var/lib/zoneminder/images /var/lib/zoneminder/events
+	fowners ${MY_WEB_USER}:${MY_WEB_GROUP} /var/lib/zoneminder /var/lib/zoneminder/images /var/lib/zoneminder/events
+## should not be needed. if needed might use tmpfiles instead
+	#dosym ../../../../../../var/lib/zoneminder/api_tmp ${MY_ZM_WEBDIR}/api/app/tmp
 
+## I believe this is long fixed upstream circa mid 1.34 series
 	# bug 523058
-	keepdir ${MY_ZM_WEBDIR}/temp
-	fowners -R apache:apache ${MY_ZM_WEBDIR}/temp
+	#keepdir ${MY_ZM_WEBDIR}/temp
+	#fowners -R apache:apache ${MY_ZM_WEBDIR}/temp
 
 	# the configuration file
 	fperms 0640 /etc/zm/zm.conf
-	fowners root:apache /etc/zm/zm.conf
+	fowners root:${MY_WEB_GROUP} /etc/zm/zm.conf
+	## can't use fperms / fowners with file globs
+	chmod 0640 "${ED}"/etc/zm/conf.d/*.conf
+	chown root:${MY_WEB_GROUP} "${ED}"/etc/zm/conf.d/*.conf
 
 	# init scripts etc
-	newinitd "${FILESDIR}"/init.d zoneminder
-	newconfd "${FILESDIR}"/conf.d zoneminder
+	cp "${FILESDIR}"/init.d-r1 "${T}"/init.d || die
+	sed -i "${T}"/init.d -e "s:%WWW_SERVER%:${MY_WEB_INITD}:g" \
+		-e "s/%ZM_OWNER%/${MY_WEB_USER}:${MY_WEB_GROUP}/g" || die
+	newinitd "${T}"/init.d zoneminder
 
 	# systemd unit file
-	systemd_dounit "${FILESDIR}"/zoneminder.service
+	# Requires -> Wants for weak depend, don't mess with the TZ Environment
+	sed -i "${BUILD_DIR}"/misc/zoneminder.service -e 's/Requires=/Wants=/' -e '/Environment=TZ=:/d' || die
+	systemd_newunit "${BUILD_DIR}"/misc/zoneminder.service zoneminder.service
 
 	# apache2 conf file
-	cp "${FILESDIR}"/10_zoneminder.conf "${T}"/10_zoneminder.conf || die
-	sed -i "${T}"/10_zoneminder.conf -e "s:%ZM_WEBDIR%:${MY_ZM_WEBDIR}:g" || die
-	insinto /etc/apache2/vhosts.d
-	doins "${T}"/10_zoneminder.conf
+	cp "${FILESDIR}"/zoneminder_vhost.include "${T}"/zoneminder_vhost.include || die
+	sed -i "${T}"/zoneminder_vhost.include -e "s:%ZM_WEBDIR%:${MY_ZM_WEBDIR}:g" || die
+	if use apache2; then
+		insinto /etc/apache2/vhosts.d
+		newins "${T}"/zoneminder_vhost.include zoneminder.include
+	fi
 
-	dodoc CHANGELOG.md CONTRIBUTING.md README.md "${T}"/10_zoneminder.conf
+	dodoc CHANGELOG.md CONTRIBUTING.md README.md
+	dodoc "${FILESDIR}"/zoneminder_vhost.conf "${T}"/zoneminder_vhost.include "${BUILD_DIR}"/misc/nginx.conf
 
 	perl_delete_packlist
 
+	README_GENTOO_SUFFIX="-r1"
 	readme.gentoo_create_doc
 }
 
@@ -228,7 +276,7 @@ pkg_postinst() {
 		elog ""
 		elog "Remember to set appropriate permisions on user created files (i.e. /etc/zm/conf.d/*.conf):"
 		elog "    chmod 640 local.conf"
-		elog "    chown root:apache local.conf"
+		elog "    chown root:${MY_WEB_GROUP} local.conf"
 		elog ""
 		ewarn ""
 		ewarn "ZoneMinder will **NO LONGER FUNCTION UNTIL** these configuration items have been migrated!"
