@@ -35,9 +35,8 @@ REQUIRED_USE="
 "
 
 DEPEND="
-app-eselect/eselect-php[apache2]
 dev-lang/perl:=
-dev-lang/php:*[apache2,cgi,curl,gd,inifile,intl,pdo,mysql,mysqli,sockets,sysvipc]
+dev-lang/php:*[curl,gd,inifile,intl,pdo,mysql,mysqli,sockets,sysvipc]
 dev-libs/libpcre
 dev-perl/Archive-Zip
 dev-perl/Class-Std-Fast
