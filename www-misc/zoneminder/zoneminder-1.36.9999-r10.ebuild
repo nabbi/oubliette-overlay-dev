@@ -5,9 +5,8 @@ EAPI=8
 
 inherit perl-functions readme.gentoo-r1 cmake flag-o-matic systemd
 
-MY_PN="ZoneMinder"
-MY_CRUD_V="3.0"
-MY_CAKEPHP_V="master"
+MY_CRUD_V="3.0" #upstream releases use 3.2.0
+MY_CAKEPHP_V="master" #upstream releases use 1.0-zm
 MY_RTSP_V="master"
 
 DESCRIPTION="full-featured, open source, state-of-the-art video surveillance software system"
@@ -23,7 +22,7 @@ if [[ ${PV} == 9999 || ${MY_PV_P} == 9999 ]]; then
 	fi
 else
 	SRC_URI="
-		https://github.com/${MY_PN}/${PN}/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz
+		https://github.com/ZoneMinder/${PN}/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz
 		https://github.com/FriendsOfCake/crud/archive/${MY_CRUD_V}.zip -> Crud-${MY_CRUD_V}.zip
 		https://github.com/ZoneMinder/CakePHP-Enum-Behavior/archive/${MY_CAKEPHP_V}.zip -> CakePHP-Enum-Behavior-${MY_CAKEPHP_V}.zip
 		https://github.com/ZoneMinder/RtspServer/archive/${MY_RTSP_V}.zip -> RtspServer-${MY_RTSP_V}.zip"
@@ -31,7 +30,7 @@ else
 fi
 
 LICENSE="GPL-2"
-IUSE="curl encode gcrypt gnutls +mmap +ssl vlc"
+IUSE="curl gcrypt gnutls +mmap +ssl vlc"
 SLOT="0"
 REQUIRED_USE="
 	|| ( ssl gnutls )
@@ -68,9 +67,8 @@ dev-php/pecl-apcu:*
 sys-auth/polkit
 sys-libs/zlib
 media-video/ffmpeg[x264,x265,jpeg2k]
-encode? ( media-libs/libmp4v2 )
 virtual/httpd-php:*
-media-libs/openjpeg
+media-libs/libjpeg-turbo:0
 virtual/perl-ExtUtils-MakeMaker
 virtual/perl-Getopt-Long
 virtual/perl-Sys-Syslog
@@ -87,10 +85,12 @@ RDEPEND="${DEPEND}"
 
 MY_ZM_WEBDIR=/usr/share/zoneminder/www
 
+PATCHES=(
+	"${FILESDIR}/${PN}-1.34.17_dont_gz_man.patch"
+)
+
 src_prepare() {
 	cmake_src_prepare
-
-	rm "${WORKDIR}/${P}/conf.d/README" || die
 
 	if ! [[ ${PV} == 9999 || ${MY_PV_P} == 9999 ]]; then
 		rmdir "${S}/web/api/app/Plugin/Crud" || die
@@ -108,10 +108,25 @@ src_configure() {
 	append-cxxflags -D__STDC_CONSTANT_MACROS
 	perl_set_version
 	export TZ=UTC # bug 630470
+
+	local myconf
+	# setting -DHAVE_LIBGNUTLS=OFF does not work, the build checks for lib and
+	# resets the HAVE_LIBGNUTLS anyway
+	if ! use gcrypt; then
+		myconf+=" -DGCRYPT_LIBRARIES=0"
+	fi
+	if ! use gnutls; then
+		myconf+=" -DGNUTLS_LIBRARIES=0"
+	fi
+
 	mycmakeargs=(
 		-DZM_TMPDIR=/var/tmp/zm
-		-DZM_SOCKDIR=/var/run/zm
+		-DZM_SOCKDIR=/run/zm
+		-DZM_RUNDIR=/run/zm
 		-DZM_PATH_ZMS="/zm/cgi-bin/nph-zms"
+		-DZM_LOGDIR=/var/log/zm
+		-DZM_CACHEDIR=/var/cache/zoneminder
+		-DZM_CONTENTDIR=/var/lib/zoneminder
 		-DZM_CONFIG_DIR="/etc/zm"
 		-DZM_CONFIG_SUBDIR="/etc/zm/conf.d"
 		-DZM_WEB_USER=apache
@@ -121,9 +136,9 @@ src_configure() {
 		-DZM_NO_X10=OFF
 		-DZM_NO_CURL="$(usex curl OFF ON)"
 		-DZM_NO_LIBVLC="$(usex vlc OFF ON)"
+		-DZM_NO_RTSPSERVER=OFF
 		-DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL="$(usex ssl OFF ON)"
-		-DHAVE_LIBGNUTLS="$(usex gnutls ON OFF)"
-		-DHAVE_LIBGCRYPT="$(usex gcrypt ON OFF)"
+		${myconf}
 	)
 
 	cmake_src_configure
@@ -132,8 +147,6 @@ src_configure() {
 
 src_install() {
 	cmake_src_install
-
-	docompress -x /usr/share/man
 
 	# the log directory
 	keepdir /var/log/zm
