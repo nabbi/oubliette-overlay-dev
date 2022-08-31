@@ -90,7 +90,7 @@ src_prepare() {
 
 	rm "${WORKDIR}/${P}/conf.d/README" || die
 
-	if [[ ${PV} == 9999 || ${MY_PV_P} == 9999 ]]; then
+	if [[ ${PV} != 9999 || ${MY_PV_P} != 9999 ]]; then
 		rmdir "${S}/web/api/app/Plugin/Crud" || die
 		mv "${WORKDIR}/crud-${MY_CRUD_V}" "${S}/web/api/app/Plugin/Crud" || die
 
