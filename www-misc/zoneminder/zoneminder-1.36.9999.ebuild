@@ -154,9 +154,6 @@ src_install() {
 	keepdir ${MY_ZM_WEBDIR}/temp
 	webapp_serverowned -R ${MY_ZM_WEBDIR}/temp
 
-	# zoneminder default configuration file
-	webapp_serverowned /etc/zm/zm.conf
-
 	# init scripts etc
 	newinitd "${FILESDIR}"/init.d zoneminder
 	newconfd "${FILESDIR}"/conf.d zoneminder
@@ -172,8 +169,6 @@ src_install() {
 	webapp_src_install
 
 	# post-webapp_src_install adjustments
-	fperms 0640 /etc/zm/zm.conf
-	fowners root /etc/zm/zm.conf
 	fperms -R 0775 /var/lib/zoneminder
 
 	dodoc CHANGELOG.md CONTRIBUTING.md README.md "${T}"/10_zoneminder.conf
@@ -228,4 +223,10 @@ pkg_postinst() {
 		ewarn "In particular, ensuring the database hostname and credentials are defined within the new locations."
 		ewarn ""
 	fi
+
+	webapp_pkg_postinst
+}
+
+pkg_prerm() {
+	webapp_pkg_prerm
 }
