@@ -30,6 +30,7 @@ fi
 LICENSE="GPL-2"
 IUSE="curl encode gcrypt gnutls +mmap +ssl vlc"
 SLOT="0"
+WEBAPP_MANUAL_SLOT="yes"
 REQUIRED_USE="
 	|| ( ssl gnutls )
 "
