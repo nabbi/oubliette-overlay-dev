@@ -21,9 +21,9 @@ if [[ ${PV} == 9999 || ${MY_PV_P} == 9999 ]]; then
 else
 	SRC_URI="
 		https://github.com/${MY_PN}/${PN}/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz
-		https://github.com/FriendsOfCake/crud/archive/${MY_CRUD_V}.zip -> Crud-${MY_CRUD_V}.zip
-		https://github.com/ZoneMinder/CakePHP-Enum-Behavior/archive/${MY_CAKEPHP_V}.zip -> CakePHP-Enum-Behavior-${MY_CAKEPHP_V}.zip
-		https://github.com/ZoneMinder/RtspServer/archive/${MY_RTSP_V}.zip -> RtspServer-${MY_RTSP_V}.zip"
+		https://github.com/FriendsOfCake/crud/archive/${MY_CRUD_V}.tar.gz -> Crud-${MY_CRUD_V}.tar.gz
+		https://github.com/ZoneMinder/CakePHP-Enum-Behavior/archive/${MY_CAKEPHP_V}.tar.gz -> CakePHP-Enum-Behavior-${MY_CAKEPHP_V}.tar.gz
+		https://github.com/ZoneMinder/RtspServer/archive/${MY_RTSP_V}.tar.gz -> RtspServer-${MY_RTSP_V}.tar.gz"
 	KEYWORDS="~amd64"
 fi
 
