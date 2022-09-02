@@ -5,8 +5,8 @@ EAPI=8
 
 inherit perl-functions readme.gentoo-r1 cmake flag-o-matic systemd
 
-MY_CRUD_V="3.0" #upstream releases use 3.2.0
-MY_CAKEPHP_V="master" #upstream releases use 1.0-zm
+MY_CRUD_V="3.0"
+MY_CAKEPHP_V="master"
 MY_RTSP_V="master"
 
 DESCRIPTION="full-featured, open source, state-of-the-art video surveillance software system"
@@ -82,7 +82,10 @@ virtual/perl-Sys-Syslog
 virtual/perl-Time-HiRes
 curl? ( net-misc/curl )
 gcrypt? ( dev-libs/libgcrypt:0= )
-gnutls? ( net-libs/gnutls )
+gnutls? (
+		net-libs/gnutls
+		dev-libs/libjwt[gnutls,ssl?]
+)
 mmap? ( dev-perl/Sys-Mmap )
 ssl? ( dev-libs/openssl:0= )
 vlc? ( media-video/vlc[live] )

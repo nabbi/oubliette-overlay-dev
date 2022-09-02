@@ -75,7 +75,10 @@ virtual/perl-Time-HiRes
 www-servers/apache
 curl? ( net-misc/curl )
 gcrypt? ( dev-libs/libgcrypt:0= )
-gnutls? ( net-libs/gnutls )
+gnutls? (
+		net-libs/gnutls
+		dev-libs/libjwt[gnutls,ssl?]
+)
 mmap? ( dev-perl/Sys-Mmap )
 ssl? ( dev-libs/openssl:0= )
 vlc? ( media-video/vlc[live] )
