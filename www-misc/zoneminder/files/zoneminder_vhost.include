@@ -21,15 +21,16 @@ Alias /zm/cache "/var/cache/zoneminder"
 	Require all granted
 </Directory>
 
+ScriptAlias /zm/cgi-bin "/usr/libexec/zoneminder/cgi-bin"
 Alias /zoneminder "%ZM_WEBDIR%"
 Alias /zm "%ZM_WEBDIR%"
+
 <Directory "%ZM_WEBDIR%">
 	Options -Indexes +MultiViews +FollowSymLinks
 	AllowOverride None
 	Require all granted
 </Directory>
 
-ScriptAlias /zm/cgi-bin "/usr/libexec/zoneminder/cgi-bin"
 <Directory "/usr/libexec/zoneminder/cgi-bin">
 	Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
 	AllowOverride All
