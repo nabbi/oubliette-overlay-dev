@@ -13,12 +13,13 @@ if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/zeek/zeek"
 else
-	SRC_URI="https://download.zeek.org/${P}.tar.gz"
-	KEYWORDS="~amd64 ~x86"
+   SRC_URI="https://download.zeek.org/${P}.tar.gz"
+   KEYWORDS="~amd64 ~x86"
 fi
 
 LICENSE="BSD"
 SLOT="0"
+KEYWORDS="~amd64 ~x86"
 IUSE="curl debug geoip2 ipsumdump ipv6 jemalloc kerberos +python sendmail
 	static-libs tcmalloc +tools +zeekctl"
 
@@ -46,10 +47,7 @@ REQUIRED_USE="zeekctl? ( python )
 	python? ( ${PYTHON_REQUIRED_USE} )"
 
 PATCHES=(
-	"${FILESDIR}"/${PN}-3.2-add-site-policy-dir-config.patch
 	"${FILESDIR}"/${PN}-3.2-do-not-strip-broker-binary.patch
-	"${FILESDIR}"/${PN}-4.2.0-do-not-install-wrapper-scripts.patch
-	"${FILESDIR}"/${PN}-4.0.2-do-not-check-for-optional-dependencies.patch
 )
 
 src_prepare() {
