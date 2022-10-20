@@ -13,8 +13,8 @@ if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/zeek/zeek"
 else
-   SRC_URI="https://download.zeek.org/${P}.tar.gz"
-   KEYWORDS="~amd64 ~x86"
+	SRC_URI="https://download.zeek.org/${P}.tar.gz"
+	KEYWORDS="~amd64 ~x86"
 fi
 
 LICENSE="BSD"
@@ -48,6 +48,7 @@ REQUIRED_USE="zeekctl? ( python )
 
 PATCHES=(
 	"${FILESDIR}"/${PN}-3.2-do-not-strip-broker-binary.patch
+	"${FILESDIR}"/${PN}-5.0.2-use-portage-optimizations.patch
 )
 
 src_prepare() {
@@ -86,8 +87,7 @@ src_configure() {
 		-DBUILD_STATIC_BINPAC=$(usex static-libs)
 		-DINSTALL_ZEEKCTL=$(usex zeekctl)
 		-DINSTALL_AUX_TOOLS=$(usex tools)
-		#https://github.com/zeek/zeek/issues/1493
-		#-DENABLE_MOBILE_IPV6=$(usex ipv6)
+		-DENABLE_MOBILE_IPV6=$(usex ipv6)
 		-DDISABLE_PYTHON_BINDINGS=$(usex python no yes)
 		-DPYTHON_EXECUTABLE="${PYTHON}"
 		-DZEEK_ETC_INSTALL_DIR="/etc/${PN}"
