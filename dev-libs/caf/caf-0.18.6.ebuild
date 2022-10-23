@@ -7,7 +7,7 @@ CMAKE_ECLASS=cmake
 inherit cmake-multilib
 
 DESCRIPTION="The C++ Actor Framework (CAF)"
-HOMEPAGE="https://actor-framework.org/"
+HOMEPAGE="https://www.actor-framework.org/"
 SRC_URI="https://github.com/actor-framework/actor-framework/archive/${PV}.tar.gz
 	-> ${P}.tar.gz"
 LICENSE="BSD"

@@ -6,6 +6,7 @@
         <name>Vjaceslavs Klimovs</name>
     </maintainer>
     <use>
+        <flag name="caf">Build against external C++ Actor Framework (for development only)</flag>
         <flag name="geoip2">Enable support for Maxmind's GeoIP library</flag>
         <flag name="ipsumdump">Enables ipsumdump support for trace-summary</flag>
         <flag name="python">Enable Python bindings for broker</flag>
@@ -18,6 +19,7 @@
         <remote-id type="github">zeek/zeek</remote-id>
     </upstream>
     <longdescription lang="en">
+        Oubliette package inspired from https://github.com/vklimovs/portage-overlay
         Zeek is a powerful network analysis framework that is much different from the typical IDS you may know.
     </longdescription>
 </pkgmetadata>

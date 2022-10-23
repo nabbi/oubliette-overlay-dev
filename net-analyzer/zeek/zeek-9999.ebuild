@@ -13,17 +13,19 @@ if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/zeek/zeek"
 else
-   SRC_URI="https://download.zeek.org/${P}.tar.gz"
-   KEYWORDS="~amd64 ~x86"
+	MY_P="${PN}-${PV/_rc/-rc}"
+	MY_PV="${PV/_rc/-rc}"
+	SRC_URI="https://github.com/zeek/zeek/releases/download/v${MY_PV}/${MY_P}.tar.gz"
+	KEYWORDS="~amd64 ~x86"
 fi
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~amd64 ~x86"
 IUSE="curl debug geoip2 ipsumdump ipv6 jemalloc kerberos +python sendmail
-	static-libs tcmalloc +tools +zeekctl"
+	static-libs tcmalloc +tools +zeekctl caf"
 
-RDEPEND=">=dev-libs/caf-0.18.2:0=
+RDEPEND="
+	caf? ( >=dev-libs/caf-0.18.2:0= )
 	dev-libs/openssl:0=
 	net-libs/libpcap
 	sys-libs/zlib:0=
@@ -48,12 +50,16 @@ REQUIRED_USE="zeekctl? ( python )
 
 PATCHES=(
 	"${FILESDIR}"/${PN}-3.2-do-not-strip-broker-binary.patch
+	"${FILESDIR}"/${PN}-5.0.2-replace-quote-flags.patch
 )
 
+S="${WORKDIR}/${MY_P}"
+
 src_prepare() {
-	rm -rf auxil/broker/3rdparty/caf \
-		auxil/broker/bindings/python/3rdparty \
-		src/3rdparty/caf || die
+	if use caf; then
+		rm -rf auxil/broker/caf || die
+		rm -rf auxil/broker/caf-incubator || die
+	fi
 
 	if use python; then
 		sed -i 's:.*/3rdparty/pybind11/.*:if(DISABLE_PYTHON_BINDINGS):' \
@@ -74,20 +80,14 @@ src_prepare() {
 
 src_configure() {
 	local mycmakeargs=(
-		-Wno-dev
-		-DCAF_ROOT="${EPREFIX}/usr/include/caf"
 		-DENABLE_DEBUG=$(usex debug)
 		-DENABLE_JEMALLOC=$(usex jemalloc)
-		-DENABLE_KRB5=$(usex kerberos)
-		-DENABLE_MMDB=$(usex geoip2)
 		-DENABLE_PERFTOOLS=$(usex tcmalloc)
 		-DENABLE_STATIC=$(usex static-libs)
 		-DBUILD_STATIC_BROKER=$(usex static-libs)
 		-DBUILD_STATIC_BINPAC=$(usex static-libs)
 		-DINSTALL_ZEEKCTL=$(usex zeekctl)
 		-DINSTALL_AUX_TOOLS=$(usex tools)
-		#https://github.com/zeek/zeek/issues/1493
-		#-DENABLE_MOBILE_IPV6=$(usex ipv6)
 		-DDISABLE_PYTHON_BINDINGS=$(usex python no yes)
 		-DPYTHON_EXECUTABLE="${PYTHON}"
 		-DZEEK_ETC_INSTALL_DIR="/etc/${PN}"
@@ -101,8 +101,18 @@ src_configure() {
 		-DZEEK_LOG_DIR="/var/log/${PN}"
 		-DZEEK_SPOOL_DIR="/var/spool/${PN}"
 	)
+	use caf &&  mycmakeargs+=( -DCAF_ROOT="${EPREFIX}/usr/include/caf" )
+
+	# TODO: confirm gentoo paths
+	#use geoip2 && mycmakeargs+=( --with-geoip=PATH )
+	#use kerberos && mycmakeargs+=( --with-krb5=PATH )
 
 	cmake_src_configure
+
+	# TODO: cmake target_compile_options appends priv_cflags without
+	# removing semicolon from PUBLIC list
+	# submodule https://github.com/simonfxr/fiber
+	sed -iE 's:FLAGS\ =\(.*\);:FLAGS =\1 :' ${BUILD_DIR}/build.ninja || die
 }
 
 src_install() {
