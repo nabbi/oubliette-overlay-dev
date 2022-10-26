@@ -13,8 +13,8 @@ if [[ ${PV} == 9999 ]]; then
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/zeek/zeek"
 else
-	MY_P="${PN}-${PV/_rc/-rc}"
-	MY_PV="${PV/_rc/-rc}"
+	MY_P="${PN}-${PV/_/-}"
+	MY_PV="${PV/_/-}"
 	SRC_URI="https://github.com/zeek/zeek/releases/download/v${MY_PV}/${MY_P}.tar.gz"
 	KEYWORDS="~amd64 ~x86"
 fi
@@ -51,6 +51,7 @@ REQUIRED_USE="zeekctl? ( python )
 PATCHES=(
 	"${FILESDIR}"/${PN}-3.2-do-not-strip-broker-binary.patch
 	"${FILESDIR}"/${PN}-5.0.2-replace-quote-flags.patch
+	"${FILESDIR}"/${PN}-5.0.2-sandbox-qa-fixes.patch
 )
 
 S="${WORKDIR}/${MY_P}"
@@ -88,11 +89,14 @@ src_configure() {
 		-DBUILD_STATIC_BINPAC=$(usex static-libs)
 		-DINSTALL_ZEEKCTL=$(usex zeekctl)
 		-DINSTALL_AUX_TOOLS=$(usex tools)
+		-DINSTALL_ZEEK_ARCHIVER=$(usex tools)
 		-DDISABLE_PYTHON_BINDINGS=$(usex python no yes)
 		-DPYTHON_EXECUTABLE="${PYTHON}"
 		-DZEEK_ETC_INSTALL_DIR="/etc/${PN}"
 		-DPY_MOD_INSTALL_DIR="$(python_get_sitedir)"
 		-DBINARY_PACKAGING_MODE=true
+		-DBUILD_SHARED_LIBS=ON
+		-DINSTALL_ZKG=ON
 	)
 
 	use debug && use tcmalloc && mycmakeargs+=( -DENABLE_PERFTOOLS_DEBUG=yes )
@@ -109,9 +113,8 @@ src_configure() {
 
 	cmake_src_configure
 
-	# TODO: cmake target_compile_options appends priv_cflags without
-	# removing semicolon from PUBLIC list
-	# submodule https://github.com/simonfxr/fiber
+	# TODO: cmake target_compile_options appends priv_cflags without removing semicolon
+	# submodule impacted https://github.com/simonfxr/fiber
 	sed -iE 's:FLAGS\ =\(.*\);:FLAGS =\1 :' ${BUILD_DIR}/build.ninja || die
 }
 
@@ -124,7 +127,10 @@ src_install() {
 		"${D}"/usr/"$(get_libdir)"/zeek/python/zeekctl/ZeekControl \
 		"${D}"/usr/"$(get_libdir)"/zeek/python/zeekctl/plugins
 
-	keepdir /var/log/"${PN}" /var/spool/"${PN}"/{tmp,brokerstore}
+	keepdir \
+		/var/log/"${PN}" \
+		/var/spool/"${PN}"/{tmp,brokerstore} \
+		/var/lib/zkg
 
 	# Make sure local config does not get overwritten on reinstalls
 	mv "${ED}"/usr/share/zeek/site "${ED}"/etc/zeek/ || die
