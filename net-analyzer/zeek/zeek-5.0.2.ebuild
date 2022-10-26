@@ -38,7 +38,10 @@ RDEPEND="
 		$(python_gen_cond_dep '>=dev-python/pybind11-2.6.1[${PYTHON_USEDEP}]')
 	)
 	sendmail? ( virtual/mta )
-	tcmalloc? ( dev-util/google-perftools )"
+	tcmalloc? ( dev-util/google-perftools )
+	tools? (
+		dev-python/semantic_version
+		dev-python/GitPython )"
 
 DEPEND="${RDEPEND}"
 
