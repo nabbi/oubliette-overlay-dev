@@ -35,3 +35,26 @@ index 648f65e..22e8005 100644
      install(FILES ${CMAKE_CURRENT_BINARY_DIR}/zkg-config
          DESTINATION ${ZEEK_ZKG_CONFIG_DIR} RENAME config)
  endif ()
+--- a/src/CMakeLists.txt	2022-10-25 22:09:03.215250744 -0500
++++ b/src/CMakeLists.txt	2022-10-25 22:09:48.448701572 -0500
+@@ -564,13 +564,13 @@
+ 
+ # Remove some stale files and scripts that previous Zeek versions put in
+ # place, yet make confuse us now. This makes upgrading easier.
+-install(CODE "
+-   file(REMOVE_RECURSE
+-       ${ZEEK_SCRIPT_INSTALL_PATH}/base/frameworks/logging/writers/dataseries.bro
+-       ${ZEEK_SCRIPT_INSTALL_PATH}/base/frameworks/logging/writers/elasticsearch.bro
+-       ${ZEEK_SCRIPT_INSTALL_PATH}/policy/tuning/logs-to-elasticsearch.bro
+-   )
+-")
++#install(CODE "
++#   file(REMOVE_RECURSE
++#       ${ZEEK_SCRIPT_INSTALL_PATH}/base/frameworks/logging/writers/dataseries.bro
++#       ${ZEEK_SCRIPT_INSTALL_PATH}/base/frameworks/logging/writers/elasticsearch.bro
++#       ${ZEEK_SCRIPT_INSTALL_PATH}/policy/tuning/logs-to-elasticsearch.bro
++#   )
++#")
+ 
+ # Make sure to escape a bunch of special characters in the path before trying to use it as a
+ # regular expression below.
