@@ -111,10 +111,6 @@ src_configure() {
 	)
 	use caf &&  mycmakeargs+=( -DCAF_ROOT="${EPREFIX}/usr/include/caf" )
 
-	# TODO: confirm gentoo paths
-	#use geoip2 && mycmakeargs+=( --with-geoip=PATH )
-	#use kerberos && mycmakeargs+=( --with-krb5=PATH )
-
 	cmake_src_configure
 
 	# TODO: cmake target_compile_options appends priv_cflags without removing semicolon
@@ -138,4 +134,7 @@ src_install() {
 
 	# Make sure local config does not get overwritten on reinstalls
 	mv "${ED}"/usr/share/zeek/site "${ED}"/etc/zeek/ || die
+
+	# set config paths
+	sed -i "s:^SitePolicyScripts.*$:SitePolicyScripts = /etc/zeek/site/local.zeek:" "${ED}"/etc/zeek/zeekctl.cfg || die
 }

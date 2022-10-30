@@ -15,7 +15,7 @@ SRC_URI="https://github.com/zeek/${PN}/archive/refs/tags/v${PV}.tar.gz -> ${P}.t
 
 LICENSE="BSD"
 SLOT="0"
-KEYWORDS="~amd64"
+KEYWORDS="~amd64 ~x86"
 
 RDEPEND=""
 BDEPEND="
