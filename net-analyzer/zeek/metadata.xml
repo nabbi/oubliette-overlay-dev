@@ -2,8 +2,7 @@
 <!DOCTYPE pkgmetadata SYSTEM "http://www.gentoo.org/dtd/metadata.dtd">
 <pkgmetadata>
     <maintainer type="person">
-        <email>vklimovs@gmail.com</email>
-        <name>Vjaceslavs Klimovs</name>
+        <email>nic+gentoo@boet.cc</email>
     </maintainer>
     <use>
         <flag name="caf">Build against external C++ Actor Framework (for development only)</flag>
@@ -19,7 +18,7 @@
         <remote-id type="github">zeek/zeek</remote-id>
     </upstream>
     <longdescription lang="en">
-        Oubliette package inspired from https://github.com/vklimovs/portage-overlay
+        Oubliette package inspired from vklimovs/portage-overlay and Bug 704850
         Zeek is a powerful network analysis framework that is much different from the typical IDS you may know.
     </longdescription>
 </pkgmetadata>
