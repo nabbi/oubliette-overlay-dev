@@ -1,7 +1,5 @@
 # gentoo apache2 vhost include file
 ServerAdmin webmaster@localhost
-# you need to set this for a named virtual host unless this is the default host
-#ServerName localhost
 
 DocumentRoot "%ZM_WEBDIR%"
 
