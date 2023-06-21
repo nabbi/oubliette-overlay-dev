@@ -26,7 +26,7 @@ else
 		https://github.com/FriendsOfCake/crud/archive/${MY_CRUD_V}.tar.gz -> Crud-${MY_CRUD_V}.tar.gz
 		https://github.com/ZoneMinder/CakePHP-Enum-Behavior/archive/${MY_CAKEPHP_V}.tar.gz -> CakePHP-Enum-Behavior-${MY_CAKEPHP_V}.tar.gz
 		https://github.com/ZoneMinder/RtspServer/archive/${MY_RTSP_V}.tar.gz -> RtspServer-${MY_RTSP_V}.tar.gz"
-	KEYWORDS=""
+	KEYWORDS="~amd64 ~x86"
 fi
 
 LICENSE="GPL-2"
@@ -40,7 +40,7 @@ REQUIRED_USE="
 
 DEPEND_WEB_SERVER="
 apache2? ( www-servers/apache )
-nginx? ( www-servers/nginx )
+nginx? ( www-servers/nginx:* )
 "
 
 DEPEND="
