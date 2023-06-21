@@ -5,10 +5,6 @@ ServerAdmin webmaster@localhost
 
 DocumentRoot "%ZM_WEBDIR%"
 
-## if you want to use SSL these need to be set to valid certificate & key
-#SSLCertificateFile
-#SSLCertificateKeyFile
-
 ## if zoneminder is the only thing on this named vhost you might want to
 ## redirect root / to /zm/ so you don't have to remember to type the path
 #RedirectMatch ^/$ /zm/
