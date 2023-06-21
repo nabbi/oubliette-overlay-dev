@@ -3,7 +3,7 @@
 
 EAPI=8
 
-inherit perl-functions readme.gentoo-r1 cmake flag-o-matic systemd
+inherit perl-functions readme.gentoo-r1 cmake flag-o-matic systemd optfeature
 
 MY_CRUD_V="3.0"
 MY_CAKEPHP_V="master"
