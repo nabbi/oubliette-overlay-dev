@@ -281,7 +281,7 @@ pkg_postinst() {
 			ewarn ""
 			ewarn "ZoneMinder ebuild no longer installs Apache 10_zoneminder.conf under /etc/apache2/vhosts.d"
 			ewarn ""
-			ewarn "Example zoneminder_vhost configs have been placed under /usr/share/doc/${P}"
+			ewarn "Example zoneminder_vhost configs have been placed under /usr/share/doc/${PF}"
 			ewarn ""
 			ewarn "Please complete the migration by installing an updated configuration file,"
 			ewarn "and then remove the symlink on 10_zoneminder.conf"
