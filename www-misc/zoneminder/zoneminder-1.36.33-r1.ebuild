@@ -253,17 +253,18 @@ pkg_postinst() {
 
 	# 2023-06-20 apache2 config no longer installed by default
 	# avoid breaking an existing installs, advise user to migrate
-	if [[ -f "/etc/apache2/vhosts.d/10_zoneminder.conf" ]]; then
-		einfo "Found deprecated apache config 10_zoneminder.conf"
+	if [[ -f "/etc/apache2/vhosts.d/10_zoneminder.conf" && ! -f "/etc/apache2/vhosts.d/zoneminder.include" ]]; then
+		elog "Found deprecated apache config 10_zoneminder.conf"
 		mv "/etc/apache2/vhosts.d/10_zoneminder.conf" "/etc/apache2/vhosts.d/zoneminder.include"
 		ln -s "/etc/apache2/vhosts.d/zoneminder.include" "/etc/apache2/vhosts.d/10_zoneminder.conf"
 	fi
 	if [[ -L "/etc/apache2/vhosts.d/10_zoneminder.conf" ]]; then
 		ewarn ""
-		ewarn "ZoneMinder ebuild no longer installs 10_zoneminder.conf under /etc/apache2/vhosts.d"
+		ewarn "ZoneMinder ebuild no longer installs Apache 10_zoneminder.conf under /etc/apache2/vhosts.d"
 		ewarn ""
-		ewarn "An example apache  zoneminder_vhost file has been placed under /usr/share/doc/${P}/"
+		ewarn "Example zoneminder_vhost configs have been placed under /usr/share/doc/${P}"
 		ewarn ""
+		ewarn "Your old apache config file has been renamed as zoneminder.include"
 		ewarn "Please complete the migration by installing an updated configuration file,"
 		ewarn "and then remove the symlink on 10_zoneminder.conf"
 		ewarn ""
