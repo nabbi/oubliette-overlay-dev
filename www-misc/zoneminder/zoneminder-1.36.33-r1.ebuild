@@ -253,7 +253,7 @@ pkg_postinst() {
 
 	# 2023-06-20 apache2 config no longer installed by default
 	# avoid breaking an existing installs, advise user to migrate
-	if [[ -f "/etc/apache2/vhosts.d/10_zoneminder.conf" && ! -f "/etc/apache2/vhosts.d/zoneminder.include" ]]; then
+	if [[ -f "/etc/apache2/vhosts.d/10_zoneminder.conf" ]]; then
 		elog "Found deprecated apache config 10_zoneminder.conf"
 		local old=$(mktemp -p /etc/apache2/vhosts.d)
 		mv "/etc/apache2/vhosts.d/10_zoneminder.conf" "${old}"
