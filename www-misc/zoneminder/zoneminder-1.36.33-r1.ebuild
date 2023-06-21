@@ -221,10 +221,7 @@ src_install() {
 	if use apache2; then
 		cp "${FILESDIR}"/zoneminder_vhost.include "${T}"/zoneminder_vhost.include || die
 		sed -i "${T}"/zoneminder_vhost.include -e "s:%ZM_WEBDIR%:${MY_ZM_WEBDIR}:g" || die
-		insinto /etc/apache2/vhosts.d
-		newins "${T}"/zoneminder_vhost.include zoneminder.include
-		dodoc "${FILESDIR}"/zoneminder_vhost.conf
-		"${T}"/zoneminder_vhost.include
+		dodoc "${FILESDIR}"/zoneminder_vhost.conf "${T}"/zoneminder_vhost.include
 	fi
 
 	# nginx conf file
@@ -252,6 +249,24 @@ pkg_postinst() {
 				elog "You have upgraded zoneminder and may have to upgrade your database now using the 'zmupdate.pl' script."
 			fi
 		done
+	fi
+
+	# 2023-06-20 apache2 config no longer installed by default
+	# avoid breaking an existing installs, advise user to migrate
+	if [[ -f "/etc/apache2/vhosts.d/10_zoneminder.conf" ]]; then
+		einfo "Found deprecated apache config 10_zoneminder.conf"
+		mv "/etc/apache2/vhosts.d/10_zoneminder.conf" "/etc/apache2/vhosts.d/zoneminder.include"
+		ln -s "/etc/apache2/vhosts.d/zoneminder.include" "/etc/apache2/vhosts.d/10_zoneminder.conf"
+	fi
+	if [[ -L "/etc/apache2/vhosts.d/10_zoneminder.conf" ]]; then
+		ewarn ""
+		ewarn "ZoneMinder ebuild no longer installs 10_zoneminder.conf under /etc/apache2/vhosts.d"
+		ewarn ""
+		ewarn "An example apache  zoneminder_vhost file has been placed under /usr/share/doc/${P}/"
+		ewarn ""
+		ewarn "Please complete the migration by installing an updated configuration file,"
+		ewarn "and then remove the symlink on 10_zoneminder.conf"
+		ewarn ""
 	fi
 
 	# 2022-02-10 The original ebuild omitted ZM_CONFIG_* at build time
