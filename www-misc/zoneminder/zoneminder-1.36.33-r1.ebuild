@@ -255,8 +255,9 @@ pkg_postinst() {
 	# avoid breaking an existing installs, advise user to migrate
 	if [[ -f "/etc/apache2/vhosts.d/10_zoneminder.conf" && ! -f "/etc/apache2/vhosts.d/zoneminder.include" ]]; then
 		elog "Found deprecated apache config 10_zoneminder.conf"
-		mv "/etc/apache2/vhosts.d/10_zoneminder.conf" "/etc/apache2/vhosts.d/zoneminder.include"
-		ln -s "/etc/apache2/vhosts.d/zoneminder.include" "/etc/apache2/vhosts.d/10_zoneminder.conf"
+		local old=$(mktemp -p /etc/apache2/vhosts.d)
+		mv "/etc/apache2/vhosts.d/10_zoneminder.conf" "${old}"
+		ln -s "${old}" "/etc/apache2/vhosts.d/10_zoneminder.conf"
 	fi
 	if [[ -L "/etc/apache2/vhosts.d/10_zoneminder.conf" ]]; then
 		ewarn ""
@@ -264,7 +265,6 @@ pkg_postinst() {
 		ewarn ""
 		ewarn "Example zoneminder_vhost configs have been placed under /usr/share/doc/${P}"
 		ewarn ""
-		ewarn "Your old apache config file has been renamed as zoneminder.include"
 		ewarn "Please complete the migration by installing an updated configuration file,"
 		ewarn "and then remove the symlink on 10_zoneminder.conf"
 		ewarn ""
