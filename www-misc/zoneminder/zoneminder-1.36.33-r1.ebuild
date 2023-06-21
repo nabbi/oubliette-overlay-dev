@@ -242,6 +242,23 @@ pkg_postinst() {
 
 	if [[ -z "${REPLACING_VERSIONS}" ]]; then
 			elog "Fresh installs of zoneminder require a few additional steps. Please read the README.gentoo"
+			elog ""
+			elog "This package requires access to a Mysql compatible database server"
+			elog "ZoneMinder can connect to a remote database if desired"
+			optfeature_header "Mysql compatible database server"
+			optfeature "Install if you don't already have one" virtual/mysql
+			elog ""
+			elog "There are optional features/enhancements that can be added"
+			optfeature_header "Onvif Access"
+			optfeature "Verbose responses from camera" dev-perl/XML-LibXML
+			optfeature "Event monitoring" dev-perl/SOAP-Lite
+			optfeature_header "Email"
+			optfeature "Older email package (if new one isn't working)" dev-perl/MIME-tools
+			optfeature_header "Event creation enhancements"
+			optfeature "Retrieves image size" dev-perl/Image-Info
+			optfeature_header "Storage"
+			optfeature "Archive to SFTP server" dev-perl/Net-SFTP-Foreign
+			optfeature "Copy to Amazon S3 bucket" dev-perl/Net-Amazon-S3 dev-perl/File-Slurp
 	else
 		local v
 		for v in ${REPLACING_VERSIONS}; do
@@ -252,22 +269,24 @@ pkg_postinst() {
 	fi
 
 	# 2023-06-20 apache2 config no longer installed by default
-	# avoid breaking an existing installs, advise user to migrate
-	if [[ -f "/etc/apache2/vhosts.d/10_zoneminder.conf" ]]; then
-		elog "Found deprecated apache config 10_zoneminder.conf"
-		local old=$(mktemp -p /etc/apache2/vhosts.d)
-		mv "/etc/apache2/vhosts.d/10_zoneminder.conf" "${old}"
-		ln -s "${old}" "/etc/apache2/vhosts.d/10_zoneminder.conf"
-	fi
-	if [[ -L "/etc/apache2/vhosts.d/10_zoneminder.conf" ]]; then
-		ewarn ""
-		ewarn "ZoneMinder ebuild no longer installs Apache 10_zoneminder.conf under /etc/apache2/vhosts.d"
-		ewarn ""
-		ewarn "Example zoneminder_vhost configs have been placed under /usr/share/doc/${P}"
-		ewarn ""
-		ewarn "Please complete the migration by installing an updated configuration file,"
-		ewarn "and then remove the symlink on 10_zoneminder.conf"
-		ewarn ""
+	# avoid breaking an existing install, advise user to migrate
+	if use apache2; then
+		if [[ -f "/etc/apache2/vhosts.d/10_zoneminder.conf" ]]; then
+			elog "Found deprecated apache config 10_zoneminder.conf"
+			local old=$(mktemp -p /etc/apache2/vhosts.d)
+			mv "/etc/apache2/vhosts.d/10_zoneminder.conf" "${old}"
+			ln -s "${old}" "/etc/apache2/vhosts.d/10_zoneminder.conf"
+		fi
+		if [[ -L "/etc/apache2/vhosts.d/10_zoneminder.conf" ]]; then
+			ewarn ""
+			ewarn "ZoneMinder ebuild no longer installs Apache 10_zoneminder.conf under /etc/apache2/vhosts.d"
+			ewarn ""
+			ewarn "Example zoneminder_vhost configs have been placed under /usr/share/doc/${P}"
+			ewarn ""
+			ewarn "Please complete the migration by installing an updated configuration file,"
+			ewarn "and then remove the symlink on 10_zoneminder.conf"
+			ewarn ""
+		fi
 	fi
 
 	# 2022-02-10 The original ebuild omitted ZM_CONFIG_* at build time
