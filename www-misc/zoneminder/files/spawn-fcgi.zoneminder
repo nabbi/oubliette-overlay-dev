@@ -1,0 +1,21 @@
+# ZoneMinder Nginx FCGI for zms
+
+FCGI_SOCKET=/run/fcgiwrap-nginx.sock
+
+FCGI_ADDRESS=
+FCGI_PORT=
+
+FCGI_PROGRAM=/usr/sbin/fcgiwrap
+
+FCGI_CHILDREN=1
+
+FCGI_CHROOT=
+FCGI_CHDIR=
+
+FCGI_USER=nginx
+FCGI_GROUP=nginx
+
+FCGI_EXTRA_OPTIONS="-M 0700"
+
+ALLOWED_ENV="PATH"
+

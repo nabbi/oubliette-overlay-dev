@@ -40,7 +40,12 @@ REQUIRED_USE="
 
 DEPEND_WEB_SERVER="
 apache2? ( www-servers/apache )
-nginx? ( www-servers/nginx:* )
+nginx? (
+	www-servers/nginx:*
+	www-misc/fcgiwrap
+	www-servers/spawn-fcgi
+	www-servers/multiwatch
+)
 "
 
 DEPEND="
@@ -224,9 +229,10 @@ src_install() {
 		dodoc "${FILESDIR}"/zoneminder_vhost.conf "${T}"/zoneminder_vhost.include
 	fi
 
-	# nginx conf file
+	# nginx conf files
 	if use nginx; then
-		dodoc "${BUILD_DIR}"/misc/nginx.conf
+		dodoc "${FILESDIR}"/zoneminder.nginx.conf "${FILESDIR}"/zoneminder.php-fpm.conf
+		newconfd "${FILESDIR}"/spawn-fcgi.zoneminder
 	fi
 
 	dodoc CHANGELOG.md CONTRIBUTING.md README.md
@@ -272,19 +278,13 @@ pkg_postinst() {
 	# avoid breaking an existing install, advise user to migrate
 	if use apache2; then
 		if [[ -f "/etc/apache2/vhosts.d/10_zoneminder.conf" ]]; then
-			elog "Found deprecated apache config 10_zoneminder.conf"
-			local old=$(mktemp -p /etc/apache2/vhosts.d)
-			mv "/etc/apache2/vhosts.d/10_zoneminder.conf" "${old}"
-			ln -s "${old}" "/etc/apache2/vhosts.d/10_zoneminder.conf"
-		fi
-		if [[ -L "/etc/apache2/vhosts.d/10_zoneminder.conf" ]]; then
 			ewarn ""
-			ewarn "ZoneMinder ebuild no longer installs Apache 10_zoneminder.conf under /etc/apache2/vhosts.d"
+			ewarn "This ZoneMinder package no longer installs 10_zoneminder.conf under /etc/apache2/vhosts.d"
 			ewarn ""
-			ewarn "Example zoneminder_vhost configs have been placed under /usr/share/doc/${PF}"
+			ewarn "Example apache configs have been placed under /usr/share/doc/${PF}"
 			ewarn ""
-			ewarn "Please complete the migration by installing an updated configuration file,"
-			ewarn "and then remove the symlink on 10_zoneminder.conf"
+			ewarn "Your old configuration should be reviewed"
+			ewarn "To suppresee this message, name your local configuraiton file something else"
 			ewarn ""
 		fi
 	fi
