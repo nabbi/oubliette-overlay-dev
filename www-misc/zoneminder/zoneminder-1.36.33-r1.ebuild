@@ -150,14 +150,11 @@ src_configure() {
 	perl_set_version
 	export TZ=UTC # bug 630470
 
-	local myconf
-	# setting -DHAVE_LIBGNUTLS=OFF does not work, the build checks for lib and
-	# resets the HAVE_LIBGNUTLS anyway
 	if ! use gcrypt; then
-		myconf+=" -DGCRYPT_LIBRARIES=0"
+		sed -i '/find_library(GCRYPT_LIBRARIES/d' CMakeLists.txt
 	fi
 	if ! use gnutls; then
-		myconf+=" -DGNUTLS_LIBRARIES=0"
+		sed -i '/find_library(GNUTLS_LIBRARIES/d' CMakeLists.txt
 	fi
 
 	mycmakeargs=(
@@ -179,7 +176,6 @@ src_configure() {
 		-DZM_NO_LIBVLC="$(usex vlc OFF ON)"
 		-DZM_NO_RTSPSERVER=OFF
 		-DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL="$(usex ssl OFF ON)"
-		${myconf}
 	)
 
 	cmake_src_configure
