@@ -232,7 +232,8 @@ src_install() {
 	# nginx conf files
 	if use nginx; then
 		dodoc "${FILESDIR}"/zoneminder.nginx.conf "${FILESDIR}"/zoneminder.php-fpm.conf
-		newconfd "${FILESDIR}"/spawn-fcgi.zoneminder
+		newconfd "${FILESDIR}"/spawn-fcgi.zoneminder.confd spawn-fcgi.zoneminder
+		newinitd "${FILESDIR}"/spawn-fcgi.zoneminder.initd spawn-fcgi.zoneminder
 	fi
 
 	dodoc CHANGELOG.md CONTRIBUTING.md README.md
