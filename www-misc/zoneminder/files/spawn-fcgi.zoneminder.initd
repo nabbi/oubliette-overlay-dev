@@ -52,7 +52,7 @@ start() {
     ebegin "Starting FastCGI application ${PROGNAME}"
     checkpath -q -d -m 700 /run/spawn-fcgi
 
-    start-stop-daemon --start --pidfile ${P} --exec ${SPAWNFCGI} \
+    start-stop-daemon --start --pidfile ${PIDFILE} --exec ${SPAWNFCGI} \
         ${E} -- -s ${FCGI_SOCKET} \
         -P ${PIDFILE} ${OPTIONS} -- ${MULTIWATCH} -f ${FCGI_CHILDREN} ${FCGI_PROGRAM}
     RETVAL=$?
