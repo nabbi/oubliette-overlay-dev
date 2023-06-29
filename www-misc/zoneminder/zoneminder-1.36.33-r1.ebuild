@@ -1,13 +1,13 @@
-# Copyright 2022 Gentoo Authors
+# Copyright 2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
 inherit perl-functions readme.gentoo-r1 cmake flag-o-matic systemd optfeature
 
-MY_CRUD_V="3.0"
-MY_CAKEPHP_V="master"
-MY_RTSP_V="master"
+MY_CRUD_V="0bd63fb464957080ead342db58ca9e01532cf1ef"
+MY_CAKEPHP_V="ea90c0cd7f6e24333a90885e563b5d30b793db29"
+MY_RTSP_V="eab32851421ffe54fec0229c3efc44c642bc8d46"
 
 DESCRIPTION="full-featured, open source, state-of-the-art video surveillance software system"
 HOMEPAGE="http://www.zoneminder.com/"
