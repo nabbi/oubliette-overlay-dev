@@ -18,7 +18,7 @@ SRC_URI="https://core.tcl.tk/tdbcsqlite3/tarball/${MY_PV}/tdbc__sqlite3-${MY_PV}
 
 LICENSE="tcltk"
 SLOT="0"
-KEYWORDS="amd64 ~hppa ~ia64 ~mips ~ppc ~x86 ~amd64-linux ~x86-linux"
+KEYWORDS="amd64 ~hppa ~mips ~ppc ~x86 ~amd64-linux ~x86-linux"
 
 RDEPEND="
 	~dev-tcltk/tdbc-${MY_TDBC}
