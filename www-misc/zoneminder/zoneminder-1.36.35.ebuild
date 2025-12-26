@@ -5,9 +5,9 @@ EAPI=8
 
 inherit perl-functions readme.gentoo-r1 cmake flag-o-matic systemd optfeature
 
-MY_CRUD_V="3.0"
-MY_CAKEPHP_V="master"
-MY_RTSP_V="master"
+MY_CRUD_V="14292374ccf1328f2d5db20897bd06f99ba4d938"
+MY_CAKEPHP_V="ea90c0cd7f6e24333a90885e563b5d30b793db29"
+MY_RTSP_V="eab32851421ffe54fec0229c3efc44c642bc8d46"
 
 DESCRIPTION="full-featured, open source, state-of-the-art video surveillance software system"
 HOMEPAGE="http://www.zoneminder.com/"
@@ -31,11 +31,11 @@ else
 fi
 
 LICENSE="GPL-2"
+# first webserver in the list is the default, users will need to disable to select others
 IUSE_WEB_SERVER="apache2 nginx"
-IUSE="curl gcrypt gnutls +mmap +ssl vlc +apache2 nginx"
+IUSE="curl gcrypt gnutls +mmap vlc +${IUSE_WEB_SERVER}"
 SLOT="0"
 REQUIRED_USE="
-	|| ( ssl gnutls )
 	^^ ( ${IUSE_WEB_SERVER} )
 "
 
@@ -79,8 +79,8 @@ dev-perl/DateTime
 dev-perl/Device-SerialPort
 dev-php/pecl-apcu:*
 sys-auth/polkit
-sys-libs/zlib
-media-video/ffmpeg[x264,x265,jpeg2k]
+virtual/zlib
+>=media-video/ffmpeg-5[x264,x265,jpeg2k]
 virtual/httpd-php:*
 media-libs/libjpeg-turbo:0
 virtual/perl-ExtUtils-MakeMaker
@@ -90,11 +90,13 @@ virtual/perl-Time-HiRes
 curl? ( net-misc/curl )
 gcrypt? ( dev-libs/libgcrypt:0= )
 gnutls? (
-		net-libs/gnutls
-		dev-libs/libjwt[gnutls,ssl?]
+	net-libs/gnutls
+	dev-libs/libjwt[gnutls]
+)
+!gnutls? (
+	dev-libs/openssl:=
 )
 mmap? ( dev-perl/Sys-Mmap )
-ssl? ( dev-libs/openssl:0= )
 vlc? ( media-video/vlc[live] )
 ${DEPEND_WEB_SERVER}
 "
@@ -174,8 +176,8 @@ src_configure() {
 		-DZM_NO_X10=OFF
 		-DZM_NO_CURL="$(usex curl OFF ON)"
 		-DZM_NO_LIBVLC="$(usex vlc OFF ON)"
+		-DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL="$(usex gnutls ON OFF)"
 		-DZM_NO_RTSPSERVER=OFF
-		-DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL="$(usex ssl OFF ON)"
 	)
 
 	cmake_src_configure

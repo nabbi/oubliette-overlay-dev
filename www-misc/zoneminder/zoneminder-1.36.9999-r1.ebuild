@@ -1,9 +1,9 @@
-# Copyright 2022 Gentoo Authors
+# Copyright 2023 Gentoo Authors
 # Distributed under the terms of the GNU General Public License v2
 
 EAPI=8
 
-inherit perl-functions readme.gentoo-r1 cmake flag-o-matic systemd
+inherit perl-functions readme.gentoo-r1 cmake flag-o-matic systemd optfeature
 
 MY_CRUD_V="3.0"
 MY_CAKEPHP_V="master"
@@ -24,23 +24,29 @@ else
 	SRC_URI="
 		https://github.com/ZoneMinder/${PN}/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz
 		https://github.com/FriendsOfCake/crud/archive/${MY_CRUD_V}.tar.gz -> Crud-${MY_CRUD_V}.tar.gz
-		https://github.com/ZoneMinder/CakePHP-Enum-Behavior/archive/${MY_CAKEPHP_V}.tar.gz -> CakePHP-Enum-Behavior-${MY_CAKEPHP_V}.tar.gz
+		https://github.com/ZoneMinder/CakePHP-Enum-Behavior/archive/${MY_CAKEPHP_V}.tar.gz -> \
+			CakePHP-Enum-Behavior-${MY_CAKEPHP_V}.tar.gz
 		https://github.com/ZoneMinder/RtspServer/archive/${MY_RTSP_V}.tar.gz -> RtspServer-${MY_RTSP_V}.tar.gz"
-	KEYWORDS=""
+	KEYWORDS="~amd64"
 fi
 
 LICENSE="GPL-2"
+# first webserver in the list is the default, users will need to disable to select others
 IUSE_WEB_SERVER="apache2 nginx"
-IUSE="curl gcrypt gnutls +mmap +ssl vlc ${IUSE_WEB_SERVER}"
+IUSE="curl gcrypt gnutls +mmap vlc +${IUSE_WEB_SERVER}"
 SLOT="0"
 REQUIRED_USE="
-	|| ( ssl gnutls )
 	^^ ( ${IUSE_WEB_SERVER} )
 "
 
 DEPEND_WEB_SERVER="
 apache2? ( www-servers/apache )
-nginx? ( www-servers/nginx )
+nginx? (
+	www-servers/nginx:*
+	www-misc/fcgiwrap
+	www-servers/spawn-fcgi
+	www-servers/multiwatch
+)
 "
 
 DEPEND="
@@ -67,13 +73,14 @@ dev-perl/Crypt-Eksblowfish
 dev-perl/Data-Entropy
 dev-perl/HTTP-Lite
 dev-perl/MIME-Lite
+dev-perl/MIME-tools
 dev-perl/X10
 dev-perl/DateTime
 dev-perl/Device-SerialPort
 dev-php/pecl-apcu:*
 sys-auth/polkit
-sys-libs/zlib
-media-video/ffmpeg[x264,x265,jpeg2k]
+virtual/zlib
+>=media-video/ffmpeg-5[x264,x265,jpeg2k]
 virtual/httpd-php:*
 media-libs/libjpeg-turbo:0
 virtual/perl-ExtUtils-MakeMaker
@@ -83,11 +90,13 @@ virtual/perl-Time-HiRes
 curl? ( net-misc/curl )
 gcrypt? ( dev-libs/libgcrypt:0= )
 gnutls? (
-		net-libs/gnutls
-		dev-libs/libjwt[gnutls,ssl?]
+	net-libs/gnutls
+	dev-libs/libjwt[gnutls]
+)
+!gnutls? (
+	dev-libs/openssl:=
 )
 mmap? ( dev-perl/Sys-Mmap )
-ssl? ( dev-libs/openssl:0= )
 vlc? ( media-video/vlc[live] )
 ${DEPEND_WEB_SERVER}
 "
@@ -143,14 +152,11 @@ src_configure() {
 	perl_set_version
 	export TZ=UTC # bug 630470
 
-	local myconf
-	# setting -DHAVE_LIBGNUTLS=OFF does not work, the build checks for lib and
-	# resets the HAVE_LIBGNUTLS anyway
 	if ! use gcrypt; then
-		myconf+=" -DGCRYPT_LIBRARIES=0"
+		sed -i '/find_library(GCRYPT_LIBRARIES/d' CMakeLists.txt
 	fi
 	if ! use gnutls; then
-		myconf+=" -DGNUTLS_LIBRARIES=0"
+		sed -i '/find_library(GNUTLS_LIBRARIES/d' CMakeLists.txt
 	fi
 
 	mycmakeargs=(
@@ -170,9 +176,8 @@ src_configure() {
 		-DZM_NO_X10=OFF
 		-DZM_NO_CURL="$(usex curl OFF ON)"
 		-DZM_NO_LIBVLC="$(usex vlc OFF ON)"
+		-DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL="$(usex gnutls ON OFF)"
 		-DZM_NO_RTSPSERVER=OFF
-		-DCMAKE_DISABLE_FIND_PACKAGE_OpenSSL="$(usex ssl OFF ON)"
-		${myconf}
 	)
 
 	cmake_src_configure
@@ -193,18 +198,10 @@ src_install() {
 
 	# now we duplicate the work of zmlinkcontent.sh
 	keepdir /var/lib/zoneminder /var/lib/zoneminder/images /var/lib/zoneminder/events
-## AFAIK (limited tests indicate) no longer used:
-	#keepdir /var/lib/zoneminder/api_tmp
+
 	# set perms/owners per dir, to keep .keep files root owned
 	fperms 0775 /var/lib/zoneminder /var/lib/zoneminder/images /var/lib/zoneminder/events
 	fowners ${MY_WEB_USER}:${MY_WEB_GROUP} /var/lib/zoneminder /var/lib/zoneminder/images /var/lib/zoneminder/events
-## should not be needed. if needed might use tmpfiles instead
-	#dosym ../../../../../../var/lib/zoneminder/api_tmp ${MY_ZM_WEBDIR}/api/app/tmp
-
-## I believe this is long fixed upstream circa mid 1.34 series
-	# bug 523058
-	#keepdir ${MY_ZM_WEBDIR}/temp
-	#fowners -R apache:apache ${MY_ZM_WEBDIR}/temp
 
 	# the configuration file
 	fperms 0640 /etc/zm/zm.conf
@@ -225,15 +222,20 @@ src_install() {
 	systemd_newunit "${BUILD_DIR}"/misc/zoneminder.service zoneminder.service
 
 	# apache2 conf file
-	cp "${FILESDIR}"/zoneminder_vhost.include "${T}"/zoneminder_vhost.include || die
-	sed -i "${T}"/zoneminder_vhost.include -e "s:%ZM_WEBDIR%:${MY_ZM_WEBDIR}:g" || die
 	if use apache2; then
-		insinto /etc/apache2/vhosts.d
-		newins "${T}"/zoneminder_vhost.include zoneminder.include
+		cp "${FILESDIR}"/zoneminder_vhost.include "${T}"/zoneminder_vhost.include || die
+		sed -i "${T}"/zoneminder_vhost.include -e "s:%ZM_WEBDIR%:${MY_ZM_WEBDIR}:g" || die
+		dodoc "${FILESDIR}"/zoneminder_vhost.conf "${T}"/zoneminder_vhost.include
+	fi
+
+	# nginx conf files
+	if use nginx; then
+		dodoc "${FILESDIR}"/zoneminder.nginx.conf "${FILESDIR}"/zoneminder.php-fpm.conf
+		newconfd "${FILESDIR}"/spawn-fcgi.zoneminder.confd spawn-fcgi.zoneminder
+		newinitd "${FILESDIR}"/spawn-fcgi.zoneminder.initd spawn-fcgi.zoneminder
 	fi
 
 	dodoc CHANGELOG.md CONTRIBUTING.md README.md
-	dodoc "${FILESDIR}"/zoneminder_vhost.conf "${T}"/zoneminder_vhost.include "${BUILD_DIR}"/misc/nginx.conf
 
 	perl_delete_packlist
 
@@ -246,6 +248,23 @@ pkg_postinst() {
 
 	if [[ -z "${REPLACING_VERSIONS}" ]]; then
 			elog "Fresh installs of zoneminder require a few additional steps. Please read the README.gentoo"
+			elog ""
+			elog "This package requires access to a Mysql compatible database server"
+			elog "ZoneMinder can connect to a remote database if desired"
+			optfeature_header "Mysql compatible database server"
+			optfeature "Install if you don't already have one" virtual/mysql
+			elog ""
+			elog "There are optional features/enhancements that can be added"
+			optfeature_header "Onvif Access"
+			optfeature "Verbose responses from camera" dev-perl/XML-LibXML
+			optfeature "Event monitoring" dev-perl/SOAP-Lite
+			optfeature_header "Email"
+			optfeature "Older email package (if new one isn't working)" dev-perl/MIME-tools
+			optfeature_header "Event creation enhancements"
+			optfeature "Retrieves image size" dev-perl/Image-Info
+			optfeature_header "Storage"
+			optfeature "Archive to SFTP server" dev-perl/Net-SFTP-Foreign
+			optfeature "Copy to Amazon S3 bucket" dev-perl/Net-Amazon-S3 dev-perl/File-Slurp
 	else
 		local v
 		for v in ${REPLACING_VERSIONS}; do
@@ -253,6 +272,21 @@ pkg_postinst() {
 				elog "You have upgraded zoneminder and may have to upgrade your database now using the 'zmupdate.pl' script."
 			fi
 		done
+	fi
+
+	# 2023-06-20 apache2 config no longer installed by default
+	# avoid breaking an existing install, advise user to migrate
+	if use apache2; then
+		if [[ -f "/etc/apache2/vhosts.d/10_zoneminder.conf" ]]; then
+			ewarn ""
+			ewarn "This ZoneMinder package no longer installs 10_zoneminder.conf under /etc/apache2/vhosts.d"
+			ewarn ""
+			ewarn "Example apache configs have been placed under /usr/share/doc/${PF}"
+			ewarn ""
+			ewarn "Your old configuration should be reviewed"
+			ewarn "To suppresee this message, name your local configuraiton file something else"
+			ewarn ""
+		fi
 	fi
 
 	# 2022-02-10 The original ebuild omitted ZM_CONFIG_* at build time
