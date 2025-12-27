@@ -198,6 +198,13 @@ src_configure() {
 src_install() {
 	cmake_src_install
 
+	rm -rf "${D}/usr/cmake"
+
+	# decompress manpages installed by upstream
+	if [[ -d "${D}/usr/share/man" ]]; then
+        find "${D}/usr/share/man" -type f -name "*.gz" -exec gunzip {} \;
+    fi
+
 	# the log directory, can contain passwords - limit access
 	keepdir /var/log/zm
 	fperms 0750 /var/log/zm
