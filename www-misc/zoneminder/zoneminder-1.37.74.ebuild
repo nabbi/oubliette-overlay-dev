@@ -14,6 +14,7 @@ if [[ ${PV} == 9999 || ${MY_PV_P} == 9999 ]]; then
 	MY_CRUD_V="3.0"
 	MY_CAKEPHP_V="master"
 	MY_RTSP_V="master"
+	MY_CXXURL_V="0.3"
 
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/ZoneMinder/zoneminder"
@@ -24,13 +25,15 @@ else
 	MY_CRUD_V="14292374ccf1328f2d5db20897bd06f99ba4d938"
 	MY_CAKEPHP_V="ea90c0cd7f6e24333a90885e563b5d30b793db29"
 	MY_RTSP_V="eab32851421ffe54fec0229c3efc44c642bc8d46"
+	MY_CXXURL_V="eaf46c0207df24853a238d4499e7f4426d9d234c"
 
 	SRC_URI="
 		https://github.com/ZoneMinder/${PN}/archive/refs/tags/${PV}.tar.gz -> ${P}.tar.gz
 		https://github.com/FriendsOfCake/crud/archive/${MY_CRUD_V}.tar.gz -> Crud-${MY_CRUD_V}.tar.gz
 		https://github.com/ZoneMinder/CakePHP-Enum-Behavior/archive/${MY_CAKEPHP_V}.tar.gz -> \
 			CakePHP-Enum-Behavior-${MY_CAKEPHP_V}.tar.gz
-		https://github.com/ZoneMinder/RtspServer/archive/${MY_RTSP_V}.tar.gz -> RtspServer-${MY_RTSP_V}.tar.gz"
+		https://github.com/ZoneMinder/RtspServer/archive/${MY_RTSP_V}.tar.gz -> RtspServer-${MY_RTSP_V}.tar.gz
+		https://github.com/chmike/CxxUrl/archive/${MY_CXXURL_V}.zip -> CxxUrl-${MY_CXXURL_V}.zip"
 	KEYWORDS="~amd64"
 fi
 
@@ -55,6 +58,7 @@ nginx? (
 
 DEPEND="
 app-eselect/eselect-php
+dev-cpp/nlohmann_json
 dev-lang/perl:=
 dev-lang/php:*[curl,gd,inifile,intl,pdo,mysql,mysqli,sockets,sysvipc]
 dev-libs/libpcre
@@ -148,6 +152,9 @@ src_prepare() {
 
 		rmdir "${S}/dep/RtspServer" || die
 		mv "${WORKDIR}/RtspServer-${MY_RTSP_V}" "${S}/dep/RtspServer" || die
+
+		rmdir "${S}/dep/CxxUrl" || die
+		mv "${WORKDIR}/CxxUrl-${MY_CXXURL_V}" "${S}/dep/CxxUrl" || die
 	fi
 }
 
