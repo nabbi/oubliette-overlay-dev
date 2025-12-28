@@ -11,20 +11,18 @@ HOMEPAGE="http://www.zoneminder.com/"
 MY_PV_MM=$(ver_cut 1-2)
 MY_PV_P=$(ver_cut 3-)
 if [[ ${PV} == 9999 || ${MY_PV_P} == 9999 ]]; then
-	MY_CRUD_V="3.0"
-	MY_CAKEPHP_V="master"
-	MY_RTSP_V="master"
-	MY_CXXURL_V="0.3"
-
 	inherit git-r3
 	EGIT_REPO_URI="https://github.com/ZoneMinder/zoneminder"
 	if [[ "${MY_PV_MM}" == 1.36 ]]; then
 		EGIT_BRANCH="release-${MY_PV_MM}"
 	fi
 else
+	# Portage normally handels the pinned submodule releases fine,
+	# however upstream had multiple regression in accidently touching,
+	# so we re-pin here to avoid breaking our gentoo builds
 	MY_CRUD_V="14292374ccf1328f2d5db20897bd06f99ba4d938"
 	MY_CAKEPHP_V="ea90c0cd7f6e24333a90885e563b5d30b793db29"
-	MY_RTSP_V="eab32851421ffe54fec0229c3efc44c642bc8d46"
+	MY_RTSP_V="055d81fe1293429e496b19104a9ed3360755a440"
 	MY_CXXURL_V="eaf46c0207df24853a238d4499e7f4426d9d234c"
 
 	SRC_URI="
