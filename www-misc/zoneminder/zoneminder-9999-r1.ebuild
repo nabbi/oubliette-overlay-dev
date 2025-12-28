@@ -32,7 +32,6 @@ else
 			CakePHP-Enum-Behavior-${MY_CAKEPHP_V}.tar.gz
 		https://github.com/ZoneMinder/RtspServer/archive/${MY_RTSP_V}.tar.gz -> RtspServer-${MY_RTSP_V}.tar.gz
 		https://github.com/chmike/CxxUrl/archive/${MY_CXXURL_V}.zip -> CxxUrl-${MY_CXXURL_V}.zip"
-	KEYWORDS="~amd64"
 fi
 
 LICENSE="GPL-2"
