@@ -84,15 +84,6 @@ PATCHES=(
 	"${FILESDIR}/${PN}-9999-use-GNUInstallDirs.patch"
 )
 
-cuda_get_host_native_arch() {
-	if [[ -z "${CUDA_ARCH}" ]]; then
-		echo "${CUDA_ARCH}"
-		return
-	fi
-
-	__nvcc_device_query || die "failed to query the native device"
-}
-
 pkg_pretend() {
 	if use amd64; then
 		if use cpu_flags_x86_f16c && use cpu_flags_x86_avx2 && use cpu_flags_x86_fma3 && ! use cpu_flags_x86_bmi2; then
@@ -311,8 +302,9 @@ src_configure() {
 		else
 			# TODO: this isn't working
 			local -x FOUNDCUDAARCHS
-			: "${FOUNDCUDAARCHS:="$(cuda_get_host_native_arch)"}"
-			
+			FOUNDCUDAARCHS="$(__nvcc_device_query || 
+				eerror "failed to query the native device")"
+
 			einfo "Discovered CUDA Architecture: ${FOUNDCUDAARCHS}"
 			mycmakeargs+=(
 				-DCMAKE_CUDA_ARCHITECTURES="${FOUNDCUDAARCHS}"
