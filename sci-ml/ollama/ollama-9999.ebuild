@@ -284,28 +284,29 @@ src_configure() {
 
 		cuda_add_sandbox -w
 
-		if [[ ! -z "${CUDA_ARCH}" ]]; then
+		if [[ -n ${CUDA_ARCH} ]]; then
 			einfo "Configured CUDA Architecture: ${CUDA_ARCH}"
-			mycmakeargs+=(-DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCH}")
-		else
-			if ! SANDBOX_WRITE=/dev/nvidiactl test -w /dev/nvidiactl ; then
-				ewarn
-				ewarn "Can not access the GPU at /dev/nvidiactl."
-				ewarn "User $(id -nu) is not in the group \"video\"."
-				ewarn
+			mycmakeargs+=( -DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCH}" )
 
-				einfo "Fallback CUDA Architecture: all"
-				mycmakeargs+=(-DCMAKE_CUDA_ARCHITECTURES="all")
+		elif ! SANDBOX_WRITE=/dev/nvidiactl test -w /dev/nvidiactl ; then
+			ewarn
+			ewarn "Can not access the GPU at /dev/nvidiactl."
+			ewarn "User $(id -nu) is not in the group \"video\"."
+			ewarn
+
+			einfo "Fallback CUDA Architecture: all"
+			mycmakeargs+=( -DCMAKE_CUDA_ARCHITECTURES="all" )
+
+		elif [[ ${MERGE_TYPE} != "buildonly" ]] ; then
+			local -x detected_cuda
+			detected_cuda=$(__nvcc_device_query 2>/dev/null | grep -oE '[0-9]{2,3}' | head -n 1)
+
+			if [[ -n ${detected_cuda} ]]; then
+				einfo "Discovered CUDA Architecture: ${detected_cuda}"
+				mycmakeargs+=( -DCMAKE_CUDA_ARCHITECTURES="${detected_cuda}" )
 			else
-
-				local -x detected_cuda=$(__nvcc_device_query 2>/dev/null | grep -oE '[0-9]{2,3}' | head -n 1)
-
-				if [[ ! -z "${detected_cuda}" ]]; then
-					einfo "Discovered CUDA Architecture: ${detected_cuda}"
-					mycmakeargs+=(-DCMAKE_CUDA_ARCHITECTURES="${detected_cuda}")
-				else
-					eerror "Failed to auto discover the CUDA device."
-				fi
+				eerror "Failed to discover the CUDA device architecture."
+				eerror "Consider manually configuring CUDA_ARCH in make.conf"
 			fi
 		fi
 
