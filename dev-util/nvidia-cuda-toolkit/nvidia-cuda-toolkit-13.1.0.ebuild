@@ -10,8 +10,8 @@ inherit check-reqs edo toolchain-funcs
 inherit python-r1
 
 DRIVER_PV="590.44.01"
-GCC_MAX_VER="14"
-CLANG_MAX_VER="19"
+GCC_MAX_VER="15"
+CLANG_MAX_VER="20"
 
 DESCRIPTION="NVIDIA CUDA Toolkit (compiler and friends)"
 HOMEPAGE="https://developer.nvidia.com/cuda-zone"
@@ -27,10 +27,10 @@ S="${WORKDIR}"
 
 LICENSE="NVIDIA-CUDA"
 
-SLOT="0/${PV}" # UNSLOTTED
-# SLOT="${PV}" # SLOTTED
+#SLOT="0/${PV}" # UNSLOTTED
+SLOT="${PV}" # SLOTTED
 
-KEYWORDS="-* ~amd64 ~arm64"
+KEYWORDS="-* ~amd64 ~arm64 ~amd64-linux ~arm64-linux"
 IUSE="clang debugger examples nsight profiler rdma sanitizer"
 RESTRICT="bindist mirror strip test"
 
@@ -67,8 +67,9 @@ BDEPEND="
 	')
 "
 
-# CUDA_PATH="/opt/cuda-${PV}" #950207
-CUDA_PATH="/opt/cuda"
+#CUDA_PATH="/opt/cuda-${PV}" #950207
+CUDA_PATH="/opt/cuda-${PV}"
+#CUDA_PATH="/opt/cuda"
 QA_PREBUILT="${CUDA_PATH#/}/*"
 
 python_check_deps() {
@@ -152,19 +153,13 @@ src_unpack() {
 }
 
 src_prepare() {
-	pushd "builds/cuda_nvcc/targets/${narch}-linux" >/dev/null || die
-	eapply -p5 "${FILESDIR}/nvidia-cuda-toolkit-glibc-2.42.patch"
-	popd >/dev/null || die
+
+	einfo $PWD
+
+	# CUDA 13 suppors glibc 2.41, this patch adds compatibility with  glibc 2.42
+	eapply -p1 "${FILESDIR}/nvidia-cuda-toolkit-glibc-2.42.patch"
 
 	default
-}
-
-src_configure() {
-	:
-}
-
-src_compile() {
-	:
 }
 
 src_install() {
@@ -257,7 +252,7 @@ src_install() {
 	chmod -x "${fix_executable_bit[@]}" || die "failed chmod"
 	popd >/dev/null || die
 
-	ebegin "parsing manifest" "${S}/manifests/cuda_"*.xml # {{{
+	ebegin "Parsing manifest" "${S}/manifests/cuda_"*.xml # {{{
 
 	"${EPYTHON}" "${FILESDIR}/parse_manifest.py" "${S}/manifests/cuda_"*".xml" &> "${T}/install.sh" \
 		|| die "failed to parse manifest"
@@ -265,6 +260,65 @@ src_install() {
 	source "${T}/install.sh" || die "failed  to source install script"
 
 	eend $? # }}}
+
+	# At this point ${ED}/${CUDA_PATH} should *not* be empty 
+	find "${ED}/${CUDA_PATH}" -empty -delete || die "empty CUDA installation dir"
+
+	# Remove directories created by manifest parsing before creating compatibility symlinks
+	# But first, merge any content that was already placed there
+	if [[ -d "${ED}/${CUDA_PATH}/include" && ! -L "${ED}/${CUDA_PATH}/include" ]]; then
+		einfo "Merging existing include content before creating symlink"
+		
+		# Ensure target directory exists
+		mkdir -p "${ED}/${CUDA_PATH}/targets/${narch}-linux/include" || die "failed to create target include directory"
+		
+		# Move any existing content from include/ to targets/.../include/
+		if [[ -n "$(ls -A "${ED}/${CUDA_PATH}/include" 2>/dev/null)" ]]; then
+			einfo "Moving existing include content to target directory"
+			cp -a "${ED}/${CUDA_PATH}/include"/* "${ED}/${CUDA_PATH}/targets/${narch}-linux/include/" || die "failed to merge include content"
+		fi
+		
+		# Now remove the directory
+		rm -rf "${ED}/${CUDA_PATH}/include" || die "failed to remove include directory"
+	fi
+
+	if [[ -d "${ED}/${CUDA_PATH}/$(get_libdir)" && ! -L "${ED}/${CUDA_PATH}/$(get_libdir)" ]]; then
+		einfo "Merging existing lib content before creating symlink"
+		
+		# Ensure target directory exists  
+		mkdir -p "${ED}/${CUDA_PATH}/targets/${narch}-linux/lib" || die "failed to create target lib directory"
+		
+		# Move any existing content from lib/ to targets/.../lib/
+		if [[ -n "$(ls -A "${ED}/${CUDA_PATH}/$(get_libdir)" 2>/dev/null)" ]]; then
+			einfo "Moving existing lib content to target directory"
+			cp -a "${ED}/${CUDA_PATH}/$(get_libdir)"/* "${ED}/${CUDA_PATH}/targets/${narch}-linux/lib/" || die "failed to merge lib content"
+		fi
+		
+		# Now remove the directory
+		rm -rf "${ED}/${CUDA_PATH}/$(get_libdir)" || die "failed to remove lib directory"
+	fi
+
+	# Create symlinks for backward compatibility  
+	dosym "targets/${narch}-linux/include" "${CUDA_PATH#/}/include"
+	dosym "targets/${narch}-linux/lib" "${CUDA_PATH#/}/$(get_libdir)"
+
+	# Since /include is now a symlink to targets/.../include, we need to create
+	# component symlinks inside the actual target directory for CCCL components
+	for component in cub thrust libcudacxx; do
+		local direct_path="${ED}/${CUDA_PATH}/targets/${narch}-linux/include/${component}"
+		local cccl_path="${ED}/${CUDA_PATH}/targets/${narch}-linux/include/cccl/${component}"
+		
+		# Only create symlink if component exists in CCCL but not directly in include
+		if [[ ! -e "${direct_path}" && -d "${cccl_path}" ]]; then
+			einfo "Creating ${component} symlink in target include directory (CCCL location)"
+			# Create relative symlink from targets/.../include/cub to cccl/cub  
+			dosym "cccl/${component}" "${CUDA_PATH#/}/targets/${narch}-linux/include/${component}"
+		elif [[ -d "${direct_path}" ]]; then
+			einfo "Component ${component} already exists in direct location, no symlink needed"
+		else
+			einfo "Component ${component} not found in either location, skipping"
+		fi
+	done
 
 	if use debugger; then
 		if [[ -d "${ED}/${CUDA_PATH}/extras/Debugger/lib64" ]]; then
@@ -285,12 +339,6 @@ src_install() {
 	if ! use rdma; then
 		rm "${ED}/${CUDA_PATH}/targets/${narch}-linux/lib/libcufile_rdma"* || die "failed to remove rdma files"
 	fi
-
-	# Add include and lib symlinks
-	dosym -r "${CUDA_PATH}/targets/${narch}-linux/include" "${CUDA_PATH}/include"
-	dosym -r "${CUDA_PATH}/targets/${narch}-linux/lib" "${CUDA_PATH}/$(get_libdir)"
-
-	find "${ED}/${CUDA_PATH}" -empty -delete || die
 
 	local ldpathextradirs pathextradirs
 
@@ -319,7 +367,13 @@ src_install() {
 	# TODO drop and replace with runtime detection similar to what python does {{{
 	# ATTENTION: change requires revbump, see link below for supported GCC # versions
 	# https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#system-requirements
-	local cuda_supported_gcc=( 8.5 9.5 10 11 12 13 "${GCC_MAX_VER}" )
+	
+	# Generate GCC version list dynamically from 10 to GCC_MAX_VER
+	# (keeping the legacy versions 8.5 and 9.5 for compatibility)
+	local cuda_supported_gcc=( 8.5 9.5 )
+	for ((ver=10; ver<=GCC_MAX_VER; ver++)); do
+		cuda_supported_gcc+=( "${ver}" )
+	done
 
 	sed \
 		-e "s:CUDA_SUPPORTED_GCC:${cuda_supported_gcc[*]}:g" \
@@ -329,7 +383,7 @@ src_install() {
 
 	# skip til cudnn has been changed #950207
 	# if [[ "${SLOT}" != "${PV}" ]]; then
-	# 	dosym -r "${CUDA_PATH}" "${CUDA_PATH%"-${PV}"}"
+	#	dosym -r "${CUDA_PATH}" "${CUDA_PATH%"-${PV}"}"
 	# fi
 
 	fowners -R root:root "${CUDA_PATH}"
