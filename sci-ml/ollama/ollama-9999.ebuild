@@ -282,6 +282,7 @@ src_configure() {
 		addpredict "/dev/char/"
 		addpredict "/proc/"
 		addpredict "/sys/"
+		addpredict "/usr/share/nvidia/"
 
 		mycmakeargs+=(
 			-DGGML_NATIVE=OFF
