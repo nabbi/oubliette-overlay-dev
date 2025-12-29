@@ -278,31 +278,34 @@ src_configure() {
 		CUDAHOSTCXX="$(cuda_gccdir)"
 		CUDAHOSTLD="$(tc-getCXX)"
 
-		cuda_add_sandbox -w
-		addpredict "/dev/char/"
-		addpredict "/proc/"
-		addpredict "/sys/"
-		addpredict "/usr/share/nvidia/"
-
 		mycmakeargs+=(
 			-DGGML_NATIVE=OFF
 		)
+
+		cuda_add_sandbox -w
 
 		if [[ ! -z "${CUDA_ARCH}" ]]; then
 			einfo "Configured CUDA Architecture: ${CUDA_ARCH}"
 			mycmakeargs+=(-DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCH}")
 		else
-			export LD_LIBRARY_PATH="${EPREFIX}/usr/lib64:${LD_LIBRARY_PATH}"
-			local -x detected_cuda=$(__nvcc_device_query 2>/dev/null | grep -oE '[0-9]{2,3}' | head -n 1)
+			if ! SANDBOX_WRITE=/dev/nvidiactl test -w /dev/nvidiactl ; then
+				ewarn
+				ewarn "Can not access the GPU at /dev/nvidiactl."
+				ewarn "User $(id -nu) is not in the group \"video\"."
+				ewarn
 
-			__nvcc_device_query
-
-			if [[ ! -z "${detected_cuda}" ]]; then
-				einfo "Discovered CUDA Architecture: ${detected_cuda}"
-				mycmakeargs+=(-DCMAKE_CUDA_ARCHITECTURES="${detected_cuda}")
-			else
 				einfo "Fallback CUDA Architecture: all"
 				mycmakeargs+=(-DCMAKE_CUDA_ARCHITECTURES="all")
+			else
+
+				local -x detected_cuda=$(__nvcc_device_query 2>/dev/null | grep -oE '[0-9]{2,3}' | head -n 1)
+
+				if [[ ! -z "${detected_cuda}" ]]; then
+					einfo "Discovered CUDA Architecture: ${detected_cuda}"
+					mycmakeargs+=(-DCMAKE_CUDA_ARCHITECTURES="${detected_cuda}")
+				else
+					eerror "Failed to auto discover the CUDA device."
+				fi
 			fi
 		fi
 
