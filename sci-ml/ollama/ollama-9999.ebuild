@@ -100,6 +100,19 @@ pkg_pretend() {
 			fi
 		fi
 	fi
+
+	if use cuda; then
+        if [[ -z "${CUDA_ARCH}" ]]; then
+            eerror "---------------------------------------------------------"
+            eerror "ERROR: CUDA_ARCH is not set!"
+            eerror "Ollama requires a specific GPU architecture"
+            eerror ""
+            eerror "Please add the following to your /etc/portage/make.conf:"
+            eerror "  CUDA_ARCH=\"86\""
+            eerror "---------------------------------------------------------"
+            die "CUDA_ARCH environment variable is required when USE=cuda is enabled."
+        fi
+    fi
 }
 
 pkg_setup() {
@@ -275,8 +288,14 @@ src_configure() {
 		cuda_add_sandbox -w
 		addpredict "/dev/char/"
 
+		local target_arch="${CUDA_ARCH}"
+		einfo "Building for CUDA Architecture: sm_${target_arch}"
+
+		# Export for Go/CGO sub-processes
+		export CUDAARCHS="${target_arch}"
+
 		mycmakeargs+=(
-			-DCMAKE_CUDA_ARCHITECTURES="86"
+			-DCMAKE_CUDA_ARCHITECTURES="${target_arch}"
 			-DGGML_NATIVE=OFF
 		)
 
