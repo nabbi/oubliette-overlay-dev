@@ -275,17 +275,10 @@ src_configure() {
 		cuda_add_sandbox -w
 		addpredict "/dev/char/"
 
-		addwrite /dev/nvidiactl
-		addwrite /dev/nvidia0
-		local CUDAARCHS
-		CUDAARCHS="$(__nvcc_device_query || eerror "failed to query the native device")"
-
-		if [[ -n "${CUDAARCHS}" ]]; then
-			mycmakeargs+=(
-				-DCMAKE_CUDA_ARCHITECTURES="$(CUDAARCHS)"
-				-DGGML_NATIVE=OFF
-			)
-		fi
+		mycmakeargs+=(
+			-DCMAKE_CUDA_ARCHITECTURES="86"
+			-DGGML_NATIVE=OFF
+		)
 
 	else
 		mycmakeargs+=(
