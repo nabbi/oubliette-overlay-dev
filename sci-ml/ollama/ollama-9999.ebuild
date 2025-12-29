@@ -85,8 +85,8 @@ PATCHES=(
 )
 
 cuda_get_host_native_arch() {
-	if [[ -v CUDAARCHS ]]; then
-		echo "${CUDAARCHS}"
+	if [[ -z "${CUDA_ARCH}" ]]; then
+		echo "${CUDA_ARCH}"
 		return
 	fi
 
@@ -111,8 +111,8 @@ pkg_pretend() {
 	fi
 
 	# When building binpkgs you probably want to include all targets
-	if use cuda && [[ ${MERGE_TYPE} == "buildonly" ]] && [[ -n "${CUDAARCHS}" ]]; then
-		local info_message="When building a binary package it's recommended to unset CUDAARCHS"
+	if use cuda && [[ ${MERGE_TYPE} == "buildonly" ]] && [[ -n "${CUDA_ARCH}" ]]; then
+		local info_message="When building a binary package it's recommended to unset CUDA_ARCH"
 		einfo "$info_message so all available architectures are build."
 	fi
 }
@@ -291,24 +291,31 @@ src_configure() {
 		addwrite "/proc/self/task"
 		addpredict "/dev/char/"
 
+		mycmakeargs+=(
+			-DGGML_NATIVE=OFF
+		)
+
 		if ! test -w /dev/nvidiactl; then
 			# eqawarn "Can't access the GPU at /dev/nvidiactl."
 			# eqawarn "User $(id -nu) is not in the group \"video\"."
-			if [[ -z "${CUDAARCHS}" ]]; then
+			if [[ -z "${CUDA_ARCH}" ]]; then
 				# build all targets
 				mycmakeargs+=(
 					-DCMAKE_CUDA_ARCHITECTURES="all"
-					-DGGML_NATIVE=OFF
+				)
+			else
+				mycmakeargs+=(
+					-DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCH}"
 				)
 			fi
 		else
-			local -x CUDAARCHS
-			: "${CUDAARCHS:="$(cuda_get_host_native_arch)"}"
+			# TODO: this isn't working
+			local -x FOUNDCUDAARCHS
+			: "${FOUNDCUDAARCHS:="$(cuda_get_host_native_arch)"}"
 			
-			einfo "Building for CUDA Architecture: ${CUDAARCHS}"
+			einfo "Discovered CUDA Architecture: ${FOUNDCUDAARCHS}"
 			mycmakeargs+=(
-				-DCMAKE_CUDA_ARCHITECTURES="${CUDAARCHS}"
-				-DGGML_NATIVE=OFF
+				-DCMAKE_CUDA_ARCHITECTURES="${FOUNDCUDAARCHS}"
 			)
 		fi
 
