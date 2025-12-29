@@ -104,7 +104,7 @@ pkg_pretend() {
 	# When building binpkgs you probably want to include all targets
 	if use cuda && [[ ${MERGE_TYPE} == "buildonly" ]] && [[ -n "${CUDA_ARCH}" ]]; then
 		local info_message="When building a binary package it's recommended to unset CUDA_ARCH"
-		einfo "$info_message so all available architectures are build."
+		einfo "$info_message so all available architectures are built."
 	fi
 }
 
