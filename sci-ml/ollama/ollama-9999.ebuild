@@ -280,7 +280,8 @@ src_configure() {
 
 		cuda_add_sandbox -w
 		addpredict "/dev/char/"
-		addpredict "/sys/devices/system/"
+		addpredict "/proc/"
+		addpredict "/sys/"
 
 		mycmakeargs+=(
 			-DGGML_NATIVE=OFF
