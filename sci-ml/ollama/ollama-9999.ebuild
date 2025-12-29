@@ -288,8 +288,8 @@ src_configure() {
 		CUDAHOSTLD="$(tc-getCXX)"
 
 		cuda_add_sandbox -w
-		addwrite "/proc/self/task"
-		addpredict "/dev/char/"
+		addpredict "/dev/char/*"
+		addpredict "/sys/bus/pci/devices/*"
 
 		mycmakeargs+=(
 			-DGGML_NATIVE=OFF
