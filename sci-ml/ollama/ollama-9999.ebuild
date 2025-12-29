@@ -286,12 +286,14 @@ src_configure() {
 		)
 
 		if [[ ! -z "${CUDA_ARCH}" ]]; then
-			einfo "User Configured CUDA Architecture: ${CUDA_ARCH}"
+			einfo "Configured CUDA Architecture: ${CUDA_ARCH}"
 			mycmakeargs+=(
 				-DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCH}"
 			)
 		else
 			local -x detected_cuda=$(__nvcc_device_query 2>/dev/null | grep -oP 'sm_\K[0-9]+' | head -n 1)
+
+			einfo __nvcc_device_query
 
 			if [[ ! -z "${detected_cuda}" ]]; then
 				einfo "Discovered CUDA Architecture: ${detected_cuda}"
