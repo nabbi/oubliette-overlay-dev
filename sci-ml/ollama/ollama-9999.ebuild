@@ -279,14 +279,10 @@ src_configure() {
 		CUDAHOSTLD="$(tc-getCXX)"
 
 		cuda_add_sandbox -w
-		addwrite /dev/nvidiactl
-		addwrite /dev/nvidia0
-		addwrite /dev/nvidia-uvm
 		addpredict "/dev/char/"
 		addpredict "/proc/"
 		addpredict "/sys/"
 		addpredict "/usr/share/nvidia/"
-		addpredict "/usr/lib64/libcuda.so.1"
 
 		mycmakeargs+=(
 			-DGGML_NATIVE=OFF
@@ -296,6 +292,7 @@ src_configure() {
 			einfo "Configured CUDA Architecture: ${CUDA_ARCH}"
 			mycmakeargs+=(-DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCH}")
 		else
+			export LD_LIBRARY_PATH="${EPREFIX}/usr/lib64:${LD_LIBRARY_PATH}"
 			local -x detected_cuda=$(__nvcc_device_query 2>/dev/null | grep -oE '[0-9]{2,3}' | head -n 1)
 
 			__nvcc_device_query
