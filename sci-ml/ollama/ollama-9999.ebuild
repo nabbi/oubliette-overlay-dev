@@ -84,6 +84,15 @@ PATCHES=(
 	"${FILESDIR}/${PN}-9999-use-GNUInstallDirs.patch"
 )
 
+cuda_get_host_native_arch() {
+	if [[ -v CUDAARCHS ]]; then
+		echo "${CUDAARCHS}"
+		return
+	fi
+
+	__nvcc_device_query || die "failed to query the native device"
+}
+
 pkg_pretend() {
 	if use amd64; then
 		if use cpu_flags_x86_f16c && use cpu_flags_x86_avx2 && use cpu_flags_x86_fma3 && ! use cpu_flags_x86_bmi2; then
@@ -101,18 +110,11 @@ pkg_pretend() {
 		fi
 	fi
 
-	if use cuda; then
-        if [[ -z "${CUDA_ARCH}" ]]; then
-            eerror "---------------------------------------------------------"
-            eerror "ERROR: CUDA_ARCH is not set!"
-            eerror "Ollama requires a specific GPU architecture"
-            eerror ""
-            eerror "Please add the following to your /etc/portage/make.conf:"
-            eerror "  CUDA_ARCH=\"86\""
-            eerror "---------------------------------------------------------"
-            die "CUDA_ARCH environment variable is required when USE=cuda is enabled."
-        fi
-    fi
+	# When building binpkgs you probably want to include all targets
+	if use cuda && [[ ${MERGE_TYPE} == "buildonly" ]] && [[ -n "${CUDAARCHS}" ]]; then
+		local info_message="When building a binary package it's recommended to unset CUDAARCHS"
+		einfo "$info_message so all available architectures are build."
+	fi
 }
 
 pkg_setup() {
@@ -286,18 +288,29 @@ src_configure() {
 		CUDAHOSTLD="$(tc-getCXX)"
 
 		cuda_add_sandbox -w
+		addwrite "/proc/self/task"
 		addpredict "/dev/char/"
 
-		local target_arch="${CUDA_ARCH}"
-		einfo "Building for CUDA Architecture: sm_${target_arch}"
-
-		# Export for Go/CGO sub-processes
-		export CUDAARCHS="${target_arch}"
-
-		mycmakeargs+=(
-			-DCMAKE_CUDA_ARCHITECTURES="${target_arch}"
-			-DGGML_NATIVE=OFF
-		)
+		if ! test -w /dev/nvidiactl; then
+			# eqawarn "Can't access the GPU at /dev/nvidiactl."
+			# eqawarn "User $(id -nu) is not in the group \"video\"."
+			if [[ -z "${CUDAARCHS}" ]]; then
+				# build all targets
+				mycmakeargs+=(
+					-DCMAKE_CUDA_ARCHITECTURES="all"
+					-DGGML_NATIVE=OFF
+				)
+			fi
+		else
+			local -x CUDAARCHS
+			: "${CUDAARCHS:="$(cuda_get_host_native_arch)"}"
+			
+			einfo "Building for CUDA Architecture: ${CUDAARCHS}"
+			mycmakeargs+=(
+				-DCMAKE_CUDA_ARCHITECTURES="${CUDAARCHS}"
+				-DGGML_NATIVE=OFF
+			)
+		fi
 
 	else
 		mycmakeargs+=(
