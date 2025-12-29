@@ -279,10 +279,14 @@ src_configure() {
 		CUDAHOSTLD="$(tc-getCXX)"
 
 		cuda_add_sandbox -w
+		addwrite /dev/nvidiactl
+		addwrite /dev/nvidia0
+		addwrite /dev/nvidia-uvm
 		addpredict "/dev/char/"
 		addpredict "/proc/"
 		addpredict "/sys/"
 		addpredict "/usr/share/nvidia/"
+		addpredict "/usr/lib64/libcuda.so.1"
 
 		mycmakeargs+=(
 			-DGGML_NATIVE=OFF
