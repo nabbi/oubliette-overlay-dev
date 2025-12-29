@@ -291,6 +291,8 @@ src_configure() {
 				-DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCH}"
 			)
 		else
+			export PATH="${EPREFIX}/opt/cuda/bin:${PATH}"
+
 			local -x detected_cuda=$(__nvcc_device_query 2>/dev/null | grep -oP 'sm_\K[0-9]+' | head -n 1)
 
 			einfo "run __nvcc_device_query"
