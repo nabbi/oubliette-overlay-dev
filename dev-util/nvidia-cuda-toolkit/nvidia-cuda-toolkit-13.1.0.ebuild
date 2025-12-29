@@ -60,6 +60,7 @@ RDEPEND="
 	rdma? (
 		sys-cluster/rdma-core
 	)
+	!<dev-util/nvidia-cuda-toolkit-13
 "
 BDEPEND="
 	$(python_gen_any_dep '
