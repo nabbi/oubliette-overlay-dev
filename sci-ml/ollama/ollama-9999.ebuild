@@ -279,36 +279,31 @@ src_configure() {
 		CUDAHOSTLD="$(tc-getCXX)"
 
 		cuda_add_sandbox -w
-		addpredict "/dev/char/*"
-		addpredict "/sys/bus/pci/devices/*"
+		addpredict "/dev/char/"
 
 		mycmakeargs+=(
 			-DGGML_NATIVE=OFF
 		)
 
-		if ! test -w /dev/nvidiactl; then
-			# eqawarn "Can't access the GPU at /dev/nvidiactl."
-			# eqawarn "User $(id -nu) is not in the group \"video\"."
-			if [[ -z "${CUDA_ARCH}" ]]; then
-				# build all targets
+		if [[ ! -z "${CUDA_ARCH}" ]]; then
+			einfo "User Configured CUDA Architecture: ${CUDA_ARCH}"
+			mycmakeargs+=(
+				-DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCH}"
+			)
+		else
+			local -x detected_cuda=$(__nvcc_device_query 2>/dev/null | grep -oP 'sm_\K[0-9]+' | head -n 1)
+
+			if [[ ! -z "${detected_cuda}" ]]; then
+				einfo "Discovered CUDA Architecture: ${detected_cuda}"
+				mycmakeargs+=(
+					-DCMAKE_CUDA_ARCHITECTURES="${detected_cuda}"
+				)
+			else
+				einfo "Fallback CUDA Architecture: all"
 				mycmakeargs+=(
 					-DCMAKE_CUDA_ARCHITECTURES="all"
 				)
-			else
-				mycmakeargs+=(
-					-DCMAKE_CUDA_ARCHITECTURES="${CUDA_ARCH}"
-				)
 			fi
-		else
-			# TODO: this isn't working
-			local -x FOUNDCUDAARCHS
-			FOUNDCUDAARCHS="$(__nvcc_device_query || 
-				eerror "failed to query the native device")"
-
-			einfo "Discovered CUDA Architecture: ${FOUNDCUDAARCHS}"
-			mycmakeargs+=(
-				-DCMAKE_CUDA_ARCHITECTURES="${FOUNDCUDAARCHS}"
-			)
 		fi
 
 	else
