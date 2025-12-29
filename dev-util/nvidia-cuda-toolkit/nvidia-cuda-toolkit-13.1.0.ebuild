@@ -10,8 +10,8 @@ inherit check-reqs edo toolchain-funcs
 inherit python-r1
 
 DRIVER_PV="590.44.01"
-GCC_MAX_VER="15"
-CLANG_MAX_VER="20"
+GCC_MAX_VER="14"
+CLANG_MAX_VER="19"
 
 DESCRIPTION="NVIDIA CUDA Toolkit (compiler and friends)"
 HOMEPAGE="https://developer.nvidia.com/cuda-zone"
@@ -27,8 +27,8 @@ S="${WORKDIR}"
 
 LICENSE="NVIDIA-CUDA"
 
-#SLOT="0/${PV}" # UNSLOTTED
-SLOT="${PV}" # SLOTTED
+SLOT="0/${PV}" # UNSLOTTED
+# SLOT="${PV}" # SLOTTED
 
 KEYWORDS="-* ~amd64 ~arm64 ~amd64-linux ~arm64-linux"
 IUSE="clang debugger examples nsight profiler rdma sanitizer"
@@ -68,9 +68,8 @@ BDEPEND="
 	')
 "
 
-#CUDA_PATH="/opt/cuda-${PV}" #950207
-CUDA_PATH="/opt/cuda-${PV}"
-#CUDA_PATH="/opt/cuda"
+# CUDA_PATH="/opt/cuda-${PV}" #950207
+CUDA_PATH="/opt/cuda"
 QA_PREBUILT="${CUDA_PATH#/}/*"
 
 python_check_deps() {
