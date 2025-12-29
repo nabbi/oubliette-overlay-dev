@@ -293,7 +293,9 @@ src_configure() {
 		else
 			local -x detected_cuda=$(__nvcc_device_query 2>/dev/null | grep -oP 'sm_\K[0-9]+' | head -n 1)
 
-			einfo __nvcc_device_query
+			einfo "run __nvcc_device_query"
+			__nvcc_device_query
+			einfo "end __nvcc_device_query"
 
 			if [[ ! -z "${detected_cuda}" ]]; then
 				einfo "Discovered CUDA Architecture: ${detected_cuda}"
