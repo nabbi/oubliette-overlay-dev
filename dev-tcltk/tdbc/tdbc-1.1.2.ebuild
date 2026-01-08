@@ -17,7 +17,7 @@ SRC_URI="http://tdbc.tcl.tk/index.cgi/tarball/${MY_PV}/${MY_P}.tar.gz
 
 LICENSE="tcltk"
 SLOT="0"
-KEYWORDS="amd64 ~hppa ~mips ~ppc ~x86 ~amd64-linux ~x86-linux"
+KEYWORDS="amd64 ~hppa ~mips ~ppc ~x86"
 
 RDEPEND="
 	>=dev-lang/tcl-8.6
