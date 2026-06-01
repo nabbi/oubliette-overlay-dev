@@ -4,7 +4,7 @@
 
 This is my development portage overlay for sandboxing Gentoo Linux ebuilds
 
-Please consider using [oubliette-overlay](https://github.com/nabbi/oubliette-overlay) instead as packages found in dev are experimental
+Please consider using [oubliette-overlay](https://github.com/nabbi/oubliette-overlay) instead as packages found in dev are experimental or certianly broken.
 
 
 This repo is not in gentoo's overlay indexs.
